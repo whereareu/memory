@@ -1,0 +1,62 @@
+<!-- 方案4: 光锥与时空弯曲 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 背景 -->
+    <path
+        android:fillColor="#16213E"
+        android:pathData="M54,54 m-52,0 a52,52 0 1,1 104,0 a52,52 0 1,1 -104,0"/>
+
+    <!-- 光锥结构 -->
+    <!-- 上半部（未来光锥）-->
+    <path
+        android:fillColor="#0F3460"
+        android:fillAlpha="0.6"
+        android:pathData="M54,20 L30,50 L78,50 Z"/>
+
+    <!-- 下半部（过去光锥）-->
+    <path
+        android:fillColor="#0F3460"
+        android:fillAlpha="0.6"
+        android:pathData="M54,88 L30,58 L78,58 Z"/>
+
+    <!-- 时空弯曲网格 -->
+    <path
+        android:strokeColor="#533483"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.5"
+        android:pathData="M20,35 Q54,45 88,35"/>
+    <path
+        android:strokeColor="#533483"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.5"
+        android:pathData="M20,54 Q54,64 88,54"/>
+    <path
+        android:strokeColor="#533483"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.5"
+        android:pathData="M20,73 Q54,83 88,73"/>
+
+    <!-- 测地线（弯曲路径）-->
+    <path
+        android:strokeColor="#E94560"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M28,30 Q54,90 80,30"
+        android:strokeLineCap="round"/>
+
+    <!-- 粒子在测地线上 -->
+    <path
+        android:fillColor="#E94560"
+        android:pathData="M54,56.5 m-3.5,0 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0"/>
+
+    <!-- 粒子光晕 -->
+    <path
+        android:fillColor="#E94560"
+        android:fillAlpha="0.3"
+        android:pathData="M54,53 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0"/>
+
+</vector>

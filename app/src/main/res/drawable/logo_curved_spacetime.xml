@@ -1,0 +1,68 @@
+<!-- 方案2: 时空漏斗与引力 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 背景：圆形渐变 -->
+    <path
+        android:fillColor="#0D1B2A"
+        android:pathData="M54,54 m-52,0 a52,52 0 1,1 104,0 a52,52 0 1,1 -104,0"/>
+
+    <!-- 时空弯曲漏斗 -->
+    <!-- 外圈 -->
+    <path
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.8"
+        android:fillColor="#00000000"
+        android:pathData="M9,40 a45,8 0 1,1 90,0 a45,8 0 1,1 -90,0"/>
+    <!-- 中圈 -->
+    <path
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.7"
+        android:fillColor="#00000000"
+        android:pathData="M19,50 a35,10 0 1,1 70,0 a35,10 0 1,1 -70,0"/>
+    <!-- 内圈 -->
+    <path
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.6"
+        android:fillColor="#00000000"
+        android:pathData="M34,60 a20,12 0 1,1 40,0 a20,12 0 1,1 -40,0"/>
+    <!-- 核心 -->
+    <path
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.5"
+        android:fillColor="#00000000"
+        android:pathData="M46,70 a8,6 0 1,1 16,0 a8,6 0 1,1 -16,0"/>
+
+    <!-- 垂直连接线（展示时空弯曲）-->
+    <path
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
+        android:pathData="M9,40 L54,70"/>
+    <path
+        android:strokeColor="#00B4D8"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
+        android:pathData="M99,40 L54,70"/>
+
+    <!-- 测地线路径 -->
+    <path
+        android:strokeColor="#FF9F1C"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M25,35 Q54,75 83,35"
+        android:strokeLineCap="round"/>
+
+    <!-- 粒子 -->
+    <path
+        android:fillColor="#FF9F1C"
+        android:pathData="M54,51.5 m-3.5,0 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0"/>
+
+</vector>

@@ -1,0 +1,67 @@
+<!-- 方案1: 弯曲时空与测地线 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 背景：深色圆形 -->
+    <path
+        android:fillColor="#1A1A2E"
+        android:pathData="M54,54 m-50,0 a50,50 0 1,1 100,0 a50,50 0 1,1 -100,0"/>
+
+    <!-- 时空网格（弯曲效果）-->
+    <!-- 横向网格线 -->
+    <path
+        android:strokeColor="#4A9EFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.6"
+        android:pathData="M20,35 Q54,50 88,35" />
+    <path
+        android:strokeColor="#4A9EFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.6"
+        android:pathData="M20,54 Q54,69 88,54" />
+    <path
+        android:strokeColor="#4A9EFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.6"
+        android:pathData="M20,73 Q54,88 88,73" />
+
+    <!-- 纵向网格线 -->
+    <path
+        android:strokeColor="#4A9EFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.4"
+        android:pathData="M35,20 Q45,54 35,88" />
+    <path
+        android:strokeColor="#4A9EFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.4"
+        android:pathData="M54,20 Q54,54 54,88" />
+    <path
+        android:strokeColor="#4A9EFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.4"
+        android:pathData="M73,20 Q63,54 73,88" />
+
+    <!-- 测地线（曲线轨迹）-->
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.9"
+        android:pathData="M25,25 Q54,80 83,25"
+        android:strokeLineCap="round" />
+
+    <!-- 运动粒子 -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M54,48 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
+
+    <!-- 粒子光晕 -->
+    <path
+        android:fillColor="#FFD700"
+        android:fillAlpha="0.3"
+        android:pathData="M54,44 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"/>
+
+</vector>

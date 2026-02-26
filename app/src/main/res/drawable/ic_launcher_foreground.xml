@@ -1,0 +1,114 @@
+<!-- Memory App Logo - 质量扭曲时空与测地线运动 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="70"
+    android:viewportHeight="70">
+
+    <!-- 时空弯曲网格（横向弧线，填满整个空间）-->
+    <!-- 顶部弧线（轻微下凹）-->
+    <path
+        android:strokeColor="#81D4FA"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.8"
+        android:fillColor="#00000000"
+        android:pathData="M4,8 Q36,12 68,8" />
+
+    <!-- 中上部弧线（开始明显弯曲）-->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.7"
+        android:fillColor="#00000000"
+        android:pathData="M4,20 Q36,26 68,20" />
+
+    <!-- 中心弧线（弯曲最明显）-->
+    <path
+        android:strokeColor="#29B6F6"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.6"
+        android:fillColor="#00000000"
+        android:pathData="M4,30 Q36,42 68,30" />
+
+    <!-- 底部弧线（逐渐恢复）-->
+    <path
+        android:strokeColor="#0288D1"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.5"
+        android:fillColor="#00000000"
+        android:pathData="M4,44 Q36,54 68,44" />
+
+    <!-- 质量源中心弧线（以质量源为中心对称）-->
+    <path
+        android:strokeColor="#0277BD"
+        android:strokeWidth="2.5"
+        android:strokeAlpha="0.45"
+        android:fillColor="#00000000"
+        android:pathData="M4,51 Q36,67 68,51" />
+
+    <!-- 垂直网格线（向中心汇聚，延伸到边缘）-->
+    <path
+        android:strokeColor="#81D4FA"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.3"
+        android:fillColor="#00000000"
+        android:pathData="M8,4 Q12,36 14,68" />
+    <path
+        android:strokeColor="#81D4FA"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.3"
+        android:fillColor="#00000000"
+        android:pathData="M64,4 Q60,36 58,68" />
+
+    <!-- 测地线：在弯曲时空中的"最直"路径，终止于质量源表面 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeAlpha="0.7"
+        android:fillColor="#00000000"
+        android:pathData="M36,4 L36,51"
+        android:strokeLineCap="round" />
+
+    <!-- 质量源：地球（紧密连接的环形结构）-->
+    <!-- 地核（中心，最热）-->
+    <path
+        android:fillColor="#FFEB3B"
+        android:pathData="M36,59 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+
+    <!-- 地幔（中间层，紧密连接地核）-->
+    <path
+        android:strokeColor="#FF9800"
+        android:strokeWidth="5"
+        android:fillColor="#00000000"
+        android:pathData="M36,59 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0" />
+
+    <!-- 地壳（外层，紧密连接地幔）-->
+    <path
+        android:strokeColor="#1976D2"
+        android:strokeWidth="6"
+        android:fillColor="#00000000"
+        android:pathData="M36,59 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0" />
+
+    <!-- 时间方向指示 - 渐变轨迹点（从上往下，间距递增表示加速）-->
+    <!-- 第一点：起始位置，冷色 -->
+    <path
+        android:fillColor="#81D4FA"
+        android:fillAlpha="0.7"
+        android:pathData="M36,10 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"/>
+    <!-- 第二点：加速中，暖色 -->
+    <path
+        android:fillColor="#FF9800"
+        android:fillAlpha="0.8"
+        android:pathData="M36,18 m-3.5,0 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0"/>
+    <!-- 第三点：速度更快，更暖 -->
+    <path
+        android:fillColor="#FF5722"
+        android:fillAlpha="0.9"
+        android:pathData="M36,28 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
+
+    <!-- 运动中的粒子（在测地线上，接近质量源表面）-->
+    <path
+        android:fillColor="#FFEB3B"
+        android:pathData="M36,40 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
+
+</vector>
