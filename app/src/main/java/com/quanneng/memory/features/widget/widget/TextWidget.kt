@@ -11,7 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * 文本小部件Provider
+ * 通用文本小部件Provider (widgetType = 0)
  * 处理小部件的生命周期事件
  */
 class TextWidget : AppWidgetProvider() {
@@ -28,9 +28,9 @@ class TextWidget : AppWidgetProvider() {
     ) {
         val widgetUpdater = getWidgetUpdater(context)
 
-        // 更新每个小部件实例
+        // 更新每个小部件实例，使用widgetType=0
         appWidgetIds.forEach { appWidgetId ->
-            widgetUpdater.updateWidget(appWidgetId)
+            widgetUpdater.updateWidget(appWidgetId, widgetType = 0)
         }
     }
 
@@ -60,7 +60,7 @@ class TextWidget : AppWidgetProvider() {
         newOptions: android.os.Bundle
     ) {
         val widgetUpdater = getWidgetUpdater(context)
-        widgetUpdater.updateWidget(appWidgetId)
+        widgetUpdater.updateWidget(appWidgetId, widgetType = 0)
     }
 
     /**

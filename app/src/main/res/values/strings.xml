@@ -10,4 +10,10 @@
     <string name="text_color_label">文字颜色</string>
     <string name="background_color_label">背景颜色</string>
     <string name="save_button">保存</string>
+
+    <!-- 小部件描述 -->
+    <string name="widget0_description">通用 Widget - 自定义你的内容</string>
+    <string name="widget1_description">显示相对论质量扭曲时空的内容</string>
+    <string name="widget2_description">记录你的灵感和名言</string>
+    <string name="widget3_description">你的待办事项和备忘</string>
 </resources>

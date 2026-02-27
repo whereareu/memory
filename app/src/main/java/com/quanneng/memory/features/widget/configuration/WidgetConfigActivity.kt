@@ -129,52 +129,14 @@ class WidgetConfigActivity : AppCompatActivity() {
                         // 显示加载状态
                     }
                     is WidgetConfigUiState.Success -> {
-                        // 优先加载全局配置，如果没有则使用实例配置
-                        val config = loadGlobalConfigOrDefault(state.config)
-
-                        // 如果使用了全局配置，同步更新ViewModel
-                        if (config.text != state.config.text) {
-                            viewModel.updateText(config.text)
-                            viewModel.updateTextSize(config.textSize)
-                            viewModel.updateTextColor(config.textColor)
-                            viewModel.updateBackgroundColor(config.backgroundColor)
-                        }
-
-                        updateUI(config)
+                        // 直接使用小部件的独立配置，不再加载全局配置
+                        updateUI(state.config)
                     }
                     is WidgetConfigUiState.Error -> {
                         // 显示错误
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * 加载全局配置作为默认值
-     */
-    private suspend fun loadGlobalConfigOrDefault(currentConfig: WidgetConfig): WidgetConfig {
-        return try {
-            val editPrefs = com.quanneng.memory.core.datastore.EditPreferences(applicationContext)
-            val globalText = editPrefs.getText()
-
-            if (globalText.isNotEmpty()) {
-                // 使用全局配置
-                WidgetConfig(
-                    appWidgetId = appWidgetId,
-                    text = globalText,
-                    textSize = editPrefs.getTextSize(),
-                    textColor = editPrefs.getTextColor(),
-                    backgroundColor = editPrefs.getBackgroundColor(),
-                    width = currentConfig.width,
-                    height = currentConfig.height
-                )
-            } else {
-                // 使用当前配置
-                currentConfig
-            }
-        } catch (e: Exception) {
-            currentConfig
         }
     }
 

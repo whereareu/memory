@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+
     <application
         android:name=".MemoryApp"
         android:allowBackup="true"
@@ -22,6 +24,10 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- 长按应用图标显示的快捷方式 -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- 主页面Activity -->
@@ -37,9 +43,50 @@
             android:theme="@style/Theme.Memory"/>
 
         <!-- 小部件Provider -->
+        <!-- 质量 Widget -->
+        <receiver
+            android:name=".features.widget.widget.TextWidget1"
+            android:exported="true"
+            android:label="质量 Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_1"/>
+        </receiver>
+
+        <!-- 名言 Widget -->
+        <receiver
+            android:name=".features.widget.widget.TextWidget2"
+            android:exported="true"
+            android:label="名言 Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_2"/>
+        </receiver>
+
+        <!-- 备忘 Widget -->
+        <receiver
+            android:name=".features.widget.widget.TextWidget3"
+            android:exported="true"
+            android:label="备忘 Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_3"/>
+        </receiver>
+
+        <!-- 通用 Widget (原始小部件) -->
         <receiver
             android:name=".features.widget.widget.TextWidget"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget0_description">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>

@@ -33,27 +33,19 @@ class WidgetUpdater(
     /**
      * 更新指定小部件
      * @param appWidgetId 小部件实例ID
+     * @param widgetType 小部件类型 (1, 2, 3)
      */
-    fun updateWidget(appWidgetId: Int) {
-        scope.launch {
-            // 优先使用全局编辑配置
-            val editPrefs = EditPreferences(context)
-            val globalText = editPrefs.getText()
-            val useGlobalConfig = globalText.isNotEmpty()
-
-            val config = if (useGlobalConfig) {
-                // 使用全局配置
-                com.quanneng.memory.features.widget.model.WidgetConfig(
-                    appWidgetId = appWidgetId,
-                    text = globalText,
-                    textSize = editPrefs.getTextSize(),
-                    textColor = editPrefs.getTextColor(),
-                    backgroundColor = editPrefs.getBackgroundColor()
-                )
-            } else {
-                // 使用实例配置
-                repository.getConfig(appWidgetId) ?: return@launch
-            }
+    fun updateWidget(appWidgetId: Int, widgetType: Int = 1) {
+        scope.launch(dispatchers.io) {
+            // 使用对应类型的配置
+            val editPrefs = EditPreferences(context, widgetType)
+            val config = com.quanneng.memory.features.widget.model.WidgetConfig(
+                appWidgetId = appWidgetId,
+                text = editPrefs.getText(),
+                textSize = editPrefs.getTextSize(),
+                textColor = editPrefs.getTextColor(),
+                backgroundColor = editPrefs.getBackgroundColor()
+            )
 
             // 获取小部件尺寸信息
             val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -81,8 +73,9 @@ class WidgetUpdater(
             // 设置背景颜色
             views.setInt(R.id.widget_root, "setBackgroundColor", config.backgroundColor)
 
-            // 设置点击事件 - 跳转到编辑页面
+            // 设置点击事件 - 跳转到编辑页面，传递widgetType
             val intent = Intent(context, Edit::class.java).apply {
+                putExtra("widget_type", widgetType)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val pendingIntent = PendingIntent.getActivity(

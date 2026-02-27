@@ -27,13 +27,22 @@ import com.quanneng.memory.core.datastore.EditPreferences
 import kotlinx.coroutines.launch
 
 class Edit : androidx.activity.ComponentActivity() {
+    private var widgetType: Int = 1
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 获取widgetType参数
+        widgetType = intent.getIntExtra("widget_type", 1)
+
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme()
             ) {
-                EditScreen(onBackPressed = { finish() })
+                EditScreen(
+                    widgetType = widgetType,
+                    onBackPressed = { finish() }
+                )
             }
         }
     }
@@ -41,7 +50,7 @@ class Edit : androidx.activity.ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditScreen(onBackPressed: () -> Unit) {
+fun EditScreen(widgetType: Int, onBackPressed: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -50,15 +59,25 @@ fun EditScreen(onBackPressed: () -> Unit) {
     var textColor by remember { mutableStateOf(Color.White) }
     var backgroundColor by remember { mutableStateOf(Color(0xDD000000.toInt())) }
 
-    // 默认内容
-    val defaultText = "物体无受力沿着弯曲时空滑落，滑落的轨迹为最短距离，即测地线(geodesic)，过程叫做测地线运动"
-    val defaultTextSize = 14f
-    val defaultTextColor = Color.White
-    val defaultBackgroundColor = Color(0xDD000000.toInt())
+    // 获取默认值
+    val defaults = EditPreferences.getDefaultValues(widgetType)
+    val defaultText = defaults.text
+    val defaultTextSize = defaults.textSize
+    val defaultTextColor = Color(defaults.textColor)
+    val defaultBackgroundColor = Color(defaults.backgroundColor)
+
+    // 获取小部件名称
+    val widgetName = when (widgetType) {
+        0 -> "通用 Widget"
+        1 -> "质量 Widget"
+        2 -> "名言 Widget"
+        3 -> "备忘 Widget"
+        else -> "Widget $widgetType"
+    }
 
     // 加载保存的配置
     LaunchedEffect(Unit) {
-        val prefs = EditPreferences(context)
+        val prefs = EditPreferences(context, widgetType)
         val savedText = prefs.getText()
         text = if (savedText.isEmpty()) defaultText else savedText
         textSize = prefs.getTextSize().takeIf { it > 0 } ?: defaultTextSize
@@ -69,7 +88,7 @@ fun EditScreen(onBackPressed: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("编辑内容") },
+                title = { Text("编辑 $widgetName") },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")
@@ -88,7 +107,7 @@ fun EditScreen(onBackPressed: () -> Unit) {
                     // 保存按钮
                     IconButton(onClick = {
                         scope.launch {
-                            val prefs = EditPreferences(context)
+                            val prefs = EditPreferences(context, widgetType)
                             prefs.saveText(text)
                             prefs.saveTextSize(textSize)
                             prefs.saveTextColor(textColor.toArgb())
@@ -173,18 +192,18 @@ fun EditScreen(onBackPressed: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     val colors = listOf(
-                        Color.Black,                     // 黑色
-                        Color(0xFF757575),               // 灰色
-                        Color.White,                     // 白色
-                        Color(0xFFD32F2F),               // 红色
-                        Color(0xFF1976D2),               // 蓝色
-                        Color(0xFF388E3C),               // 绿色
-                        Color(0xFFF57C00),               // 橙色
-                        Color(0xFF7B1FA2),               // 紫色
-                        Color(0xFFE91E63),               // 粉色
-                        Color(0xFF00BCD4),               // 青色
-                        Color(0xFFFFC107),               // 琥珀色
-                        Color(0xFF795548)                // 棕色
+                        Color.Black,
+                        Color(0xFF757575),
+                        Color.White,
+                        Color(0xFFD32F2F),
+                        Color(0xFF1976D2),
+                        Color(0xFF388E3C),
+                        Color(0xFFF57C00),
+                        Color(0xFF7B1FA2),
+                        Color(0xFFE91E63),
+                        Color(0xFF00BCD4),
+                        Color(0xFFFFC107),
+                        Color(0xFF795548)
                     )
                     colors.forEach { color ->
                         Box(
@@ -205,35 +224,33 @@ fun EditScreen(onBackPressed: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                // 分成两行显示，每行12个颜色
                 val bgColors = listOf(
-                    Color.White,                     // 纯白色
-                    Color(0xFFFAFAFA),               // 浅灰色
-                    Color(0xFFF5F5F5),               // 灰白色
-                    Color(0x80FFFFFF.toInt()),       // 白色 50% 透明
-                    Color(0x80FAFAFA.toInt()),       // 浅灰 50% 透明
-                    Color(0xCC212121.toInt()),       // 黑色 80% 不透明
-                    Color(0x80000000.toInt()),       // 黑色 50% 透明
-                    Color(0xDD000000.toInt()),       // 黑色 87% 不透明
-                    Color(0xFF212121),               // 深黑色
-                    Color(0xFF1976D2),               // 蓝色
-                    Color(0x801976D2.toInt()),       // 蓝色 50% 透明
-                    Color(0xFF388E3C),               // 绿色
-                    Color(0x80388E3C.toInt()),       // 绿色 50% 透明
-                    Color(0xFFD32F2F),               // 红色
-                    Color(0xFFF57C00),               // 橙色
-                    Color(0xFF7B1FA2),               // 紫色
-                    Color(0xFFE91E63),               // 粉色
-                    Color(0xFF00BCD4),               // 青色
-                    Color(0xFFFFC107),               // 琥珀色
-                    Color(0xFF3F51B5),               // 靛蓝色
-                    Color(0x803F51B5.toInt()),       // 靛蓝 50% 透明
-                    Color(0xFF607D8B),               // 蓝灰色
-                    Color(0xFF9E9E9E),               // 中灰色
-                    Color(0xFF616161)                // 深灰色
+                    Color.White,
+                    Color(0xFFFAFAFA),
+                    Color(0xFFF5F5F5),
+                    Color(0x80FFFFFF.toInt()),
+                    Color(0x80FAFAFA.toInt()),
+                    Color(0xCC212121.toInt()),
+                    Color(0x80000000.toInt()),
+                    Color(0xDD000000.toInt()),
+                    Color(0xFF212121),
+                    Color(0xFF1976D2),
+                    Color(0x801976D2.toInt()),
+                    Color(0xFF388E3C),
+                    Color(0x80388E3C.toInt()),
+                    Color(0xFFD32F2F),
+                    Color(0xFFF57C00),
+                    Color(0xFF7B1FA2),
+                    Color(0xFFE91E63),
+                    Color(0xFF00BCD4),
+                    Color(0xFFFFC107),
+                    Color(0xFF3F51B5),
+                    Color(0x803F51B5.toInt()),
+                    Color(0xFF607D8B),
+                    Color(0xFF9E9E9E),
+                    Color(0xFF616161)
                 )
 
-                // 分成3行显示，每行最多9个颜色
                 bgColors.chunked(9).forEach { rowColors ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
