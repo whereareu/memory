@@ -1,0 +1,65 @@
+Git 远端仓库切换指南
+======================
+
+方案1：手动切换命令
+-------------------
+
+# 切换到 SSH
+git remote set-url origin git@github.com:whereareu/memory.git
+
+# 切换回 HTTPS
+git remote set-url origin https://github.com/whereareu/memory.git
+
+# 查看当前配置
+git remote -v
+
+
+方案2：配置多个 remote（更方便）
+-------------------------------
+
+# 添加一个额外的 remote，比如 origin-ssh
+git remote add origin-ssh git@github.com:whereareu/memory.git
+
+# 以后使用时：
+git push origin-ssh main    # 使用 SSH 推送
+git push origin main        # 使用 HTTPS 推送
+
+# 删除不需要的 remote
+git remote remove origin-ssh
+
+
+方案3：使用 Git 配置自动处理（最推荐）
+------------------------------------
+
+# 配置 credential helper（只需执行一次）
+git config --global credential.helper store
+
+# 第一次 push 时输入一次 token，之后就会自动记住
+git push origin main
+
+
+认证方式说明
+-----------
+
+HTTPS 方式：
+  - 需要 Personal Access Token (PAT)
+  - Token 获取：https://github.com/settings/tokens
+  - 生成时勾选 repo 权限
+
+SSH 方式：
+  - 需要配置 SSH 密钥
+  - 生成密钥：ssh-keygen -t ed25519 -C "your_email@example.com"
+  - 添加公钥到 GitHub：https://github.com/settings/keys
+
+
+常见问题
+--------
+
+Q: 忘记密码/token 怎么办？
+A: 清除缓存：git config --global --unset credential.helper
+
+Q: SSH 连接被拒绝？
+A: 测试连接：ssh -T git@github.com
+
+Q: 想要永久使用 SSH？
+A: 切换一次即可：git remote set-url origin git@github.com:whereareu/memory.git

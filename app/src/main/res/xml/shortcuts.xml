@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 通用 Widget -->
+    <shortcut
+        android:shortcutId="widget_0"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/widget0_description">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.quanneng.memory"
+            android:targetClass="com.quanneng.memory.Edit" />
+        <extra
+            android:name="widget_type"
+            android:value="0" />
+    </shortcut>
+
+    <!-- 质量 Widget -->
+    <shortcut
+        android:shortcutId="widget_1"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/widget1_description">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.quanneng.memory"
+            android:targetClass="com.quanneng.memory.Edit" />
+        <extra
+            android:name="widget_type"
+            android:value="1" />
+    </shortcut>
+
+    <!-- 名言 Widget -->
+    <shortcut
+        android:shortcutId="widget_2"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/widget2_description">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.quanneng.memory"
+            android:targetClass="com.quanneng.memory.Edit" />
+        <extra
+            android:name="widget_type"
+            android:value="2" />
+    </shortcut>
+
+    <!-- 备忘 Widget -->
+    <shortcut
+        android:shortcutId="widget_3"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/widget3_description">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.quanneng.memory"
+            android:targetClass="com.quanneng.memory.Edit" />
+        <extra
+            android:name="widget_type"
+            android:value="3" />
+    </shortcut>
+</shortcuts>
