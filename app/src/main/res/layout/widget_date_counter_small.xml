@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x2 日期计数器小部件布局 -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@android:color/black">
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/date_counter_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:text="开始日期"/>
+
+    <!-- 目标日期 -->
+    <TextView
+        android:id="@+id/date_counter_target_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"/>
+
+    <!-- 经过天数 -->
+    <TextView
+        android:id="@+id/date_counter_elapsed_days"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:textSize="24sp"
+        android:textColor="#FF4FC3F7"
+        android:textStyle="bold"
+        android:text="已过 0 天"/>
+
+</LinearLayout>

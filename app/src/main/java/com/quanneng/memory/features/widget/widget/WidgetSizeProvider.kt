@@ -54,4 +54,17 @@ class WidgetSizeProvider {
             WidgetLayout.LARGE_4X4 -> R.layout.widget_text_large
         }
     }
+
+    /**
+     * 获取日期计数器布局资源ID
+     * @param layout 布局类型
+     * @return 布局资源ID
+     */
+    fun getDateCounterLayoutResId(layout: WidgetLayout): Int {
+        return when (layout) {
+            WidgetLayout.SMALL_2X2 -> R.layout.widget_date_counter_small
+            WidgetLayout.MEDIUM_4X2 -> R.layout.widget_date_counter_medium
+            WidgetLayout.LARGE_4X4 -> R.layout.widget_date_counter_large
+        }
+    }
 }
