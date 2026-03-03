@@ -69,13 +69,16 @@
                 android:resource="@xml/widget_info_2"/>
         </receiver>
 
-        <!-- 备忘 Widget -->
+        <!-- 日期计数器 Widget -->
         <receiver
             android:name=".features.widget.widget.TextWidget3"
             android:exported="true"
-            android:label="备忘 Widget">
+            android:label="日期计数器">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.intent.action.DATE_CHANGED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

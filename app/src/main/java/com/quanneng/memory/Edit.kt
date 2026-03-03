@@ -311,7 +311,7 @@ fun DateCounterEditScreen(
 
     // 日期选择器状态
     var showDatePicker by remember { mutableStateOf(false) }
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日")
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
 
     // 加载保存的全局配置
     LaunchedEffect(Unit) {

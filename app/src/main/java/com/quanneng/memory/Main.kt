@@ -185,7 +185,7 @@ fun MainScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("备忘 Widget")
+                            Text("日期计数器 Widget")
                         }
                     }
                 }

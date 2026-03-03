@@ -91,7 +91,7 @@ class EditPreferences(private val context: Context, private val widgetType: Int 
                     backgroundColor = 0xDD1976D2.toInt()
                 )
                 3 -> DefaultValues(
-                    text = "备忘 Widget - 你的待办事项",
+                    text = "日期计数器 Widget",
                     textSize = 15f,
                     textColor = 0xFF000000.toInt(),
                     backgroundColor = 0xDDFFEB3B.toInt()

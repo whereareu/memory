@@ -10,7 +10,7 @@
     android:maxResizeWidth="250dp"
     android:maxResizeHeight="250dp"
     android:resizeMode="horizontal|vertical"
-    android:updatePeriodMillis="0"
+    android:updatePeriodMillis="3600000"
     android:widgetCategory="home_screen"
     android:previewImage="@android:drawable/ic_menu_agenda"
     android:label="@string/widget3_description"/>

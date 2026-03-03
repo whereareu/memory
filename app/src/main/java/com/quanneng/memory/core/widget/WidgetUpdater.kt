@@ -4,7 +4,6 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.widget.RemoteViews
 import com.quanneng.memory.Edit
 import com.quanneng.memory.R
@@ -12,9 +11,12 @@ import com.quanneng.memory.core.datastore.DateCounterPreferences
 import com.quanneng.memory.core.datastore.EditPreferences
 import com.quanneng.memory.core.dispatchers.DispatcherProvider
 import com.quanneng.memory.features.widget.data.WidgetRepository
+import com.quanneng.memory.features.widget.widget.TextWidget
+import com.quanneng.memory.features.widget.widget.TextWidget1
+import com.quanneng.memory.features.widget.widget.TextWidget2
+import com.quanneng.memory.features.widget.widget.TextWidget3
 import com.quanneng.memory.features.widget.widget.WidgetSizeProvider
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
@@ -31,7 +33,7 @@ class WidgetUpdater(
 ) {
     private val widgetSizeProvider = WidgetSizeProvider()
     private val scope = CoroutineScope(SupervisorJob() + dispatchers.main)
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日")
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
 
     /**
      * 更新指定小部件
@@ -190,10 +192,46 @@ class WidgetUpdater(
      */
     fun updateAllWidgets() {
         scope.launch {
-            val widgetIds = repository.getAllWidgetIds()
-            widgetIds.forEach { id ->
-                updateWidget(id)
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+
+            // 更新各类型的小部件
+            updateWidgetsByType(appWidgetManager, TextWidget::class.java, 0)
+            updateWidgetsByType(appWidgetManager, TextWidget1::class.java, 1)
+            updateWidgetsByType(appWidgetManager, TextWidget2::class.java, 2)
+            updateWidgetsByType(appWidgetManager, TextWidget3::class.java, 3)
+        }
+    }
+
+    /**
+     * 更新指定类型的所有小部件
+     */
+    private fun updateWidgetsByType(
+        appWidgetManager: AppWidgetManager,
+        widgetClass: Class<*>,
+        widgetType: Int
+    ) {
+        val componentName = android.content.ComponentName(context, widgetClass)
+        val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        widgetIds.forEach { id ->
+            updateWidget(id, widgetType)
+        }
+    }
+
+    /**
+     * 更新指定类型的所有小部件
+     * @param widgetType 小部件类型 (0, 1, 2, 3)
+     */
+    fun updateWidgetsByType(widgetType: Int) {
+        scope.launch {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val widgetClass = when (widgetType) {
+                0 -> TextWidget::class.java
+                1 -> TextWidget1::class.java
+                2 -> TextWidget2::class.java
+                3 -> TextWidget3::class.java
+                else -> return@launch
             }
+            updateWidgetsByType(appWidgetManager, widgetClass, widgetType)
         }
     }
 }
