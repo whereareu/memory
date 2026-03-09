@@ -67,4 +67,30 @@ class WidgetSizeProvider {
             WidgetLayout.LARGE_4X4 -> R.layout.widget_date_counter_large
         }
     }
+
+    /**
+     * 获取倒计时布局资源ID
+     * @param layout 布局类型
+     * @return 布局资源ID
+     */
+    fun getCountdownLayoutResId(layout: WidgetLayout): Int {
+        return when (layout) {
+            WidgetLayout.SMALL_2X2 -> R.layout.widget_countdown_small
+            WidgetLayout.MEDIUM_4X2 -> R.layout.widget_countdown_medium
+            WidgetLayout.LARGE_4X4 -> R.layout.widget_countdown_large
+        }
+    }
+
+    /**
+     * 获取闪现布局资源ID
+     * @param layout 布局类型
+     * @return 布局资源ID
+     */
+    fun getFlashThoughtLayoutResId(layout: WidgetLayout): Int {
+        return when (layout) {
+            WidgetLayout.SMALL_2X2 -> R.layout.widget_flash_thought_small
+            WidgetLayout.MEDIUM_4X2 -> R.layout.widget_flash_thought_medium
+            WidgetLayout.LARGE_4X4 -> R.layout.widget_flash_thought_large
+        }
+    }
 }

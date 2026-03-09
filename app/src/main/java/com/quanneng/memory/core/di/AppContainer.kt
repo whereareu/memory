@@ -4,9 +4,13 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.room.Room
 import com.quanneng.memory.core.datastore.MultiInstanceWidgetPreferences
 import com.quanneng.memory.core.dispatchers.DispatcherProvider
 import com.quanneng.memory.core.widget.WidgetUpdater
+import com.quanneng.memory.features.flashthought.data.FlashThoughtDao
+import com.quanneng.memory.features.flashthought.data.FlashThoughtDatabase
+import com.quanneng.memory.features.flashthought.data.FlashThoughtRepository
 import com.quanneng.memory.features.widget.data.WidgetDataSource
 import com.quanneng.memory.features.widget.data.WidgetRepository
 
@@ -40,6 +44,21 @@ class AppContainer(context: Context) {
     val widgetUpdater: WidgetUpdater = WidgetUpdater(
         context = context,
         repository = widgetRepository,
+        dispatchers = dispatcherProvider
+    )
+
+    // Room 数据库
+    private val flashThoughtDatabase: FlashThoughtDatabase by lazy {
+        Room.databaseBuilder(
+            context,
+            FlashThoughtDatabase::class.java,
+            "flash_thoughts.db"
+        ).build()
+    }
+
+    val flashThoughtDao: FlashThoughtDao = flashThoughtDatabase.flashThoughtDao()
+    val flashThoughtRepository: FlashThoughtRepository = FlashThoughtRepository(
+        dao = flashThoughtDao,
         dispatchers = dispatcherProvider
     )
 }

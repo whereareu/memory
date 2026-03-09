@@ -16,4 +16,6 @@
     <string name="widget1_description">显示相对论质量扭曲时空的内容</string>
     <string name="widget2_description">记录你的灵感和名言</string>
     <string name="widget3_description">日期计数器 - 记录重要的日子</string>
+    <string name="widget4_description">倒计时 - 距离目标还有多少天</string>
+    <string name="flash_thought_widget_description">闪现 Widget - 快速记录想法和灵感</string>
 </resources>

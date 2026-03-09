@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x2 倒计时小部件布局 -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@android:color/black">
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/countdown_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:text="目标日期"/>
+
+    <!-- 目标日期 -->
+    <TextView
+        android:id="@+id/countdown_target_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"/>
+
+    <!-- 剩余天数 -->
+    <TextView
+        android:id="@+id/countdown_remaining_days"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:textSize="24sp"
+        android:textColor="#FFFF5722"
+        android:textStyle="bold"
+        android:text="剩余 0 天"/>
+
+</LinearLayout>
