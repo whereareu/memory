@@ -400,6 +400,281 @@ class AppListTest {
         }
     }
 
+    @Test
+    fun `AppListViewModel_showAppMenu_displays_menu_state`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app", 0, "Test App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 获取应用信息
+        val initialState = viewModel.uiState.value
+        assertTrue(initialState is AppListUiState.Success)
+        val app = (initialState as AppListUiState.Success).apps[0]
+
+        // 显示操作菜单
+        viewModel.showAppMenu(app)
+        testScheduler.advanceUntilIdle()
+
+        // 验证菜单状态
+        val menuState = viewModel.uiState.value
+        assertTrue(menuState is AppListUiState.AppMenu)
+        if (menuState is AppListUiState.AppMenu) {
+            assertEquals("com.example.app", menuState.app.packageName)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_closeAppMenu_returns_to_list_state`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app", 0, "Test App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 获取应用信息并显示菜单
+        val initialState = viewModel.uiState.value
+        val app = (initialState as AppListUiState.Success).apps[0]
+        viewModel.showAppMenu(app)
+        testScheduler.advanceUntilIdle()
+
+        // 验证菜单状态
+        assertTrue(viewModel.uiState.value is AppListUiState.AppMenu)
+
+        // 关闭菜单
+        viewModel.closeAppMenu()
+        testScheduler.advanceUntilIdle()
+
+        // 验证返回列表状态
+        val finalState = viewModel.uiState.value
+        assertTrue(finalState is AppListUiState.Success)
+    }
+
+    @Test
+    fun `AppListViewModel_openApp_succeeds_for_valid_app`() = runTest {
+        val mockIntent = mockk<android.content.Intent>()
+        every { mockPackageManager.getLaunchIntentForPackage("com.example.app") } returns mockIntent
+        every { mockIntent.addFlags(any()) } returns mockIntent
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 打开应用
+        viewModel.openApp("com.example.app")
+        testScheduler.advanceUntilIdle()
+
+        // 验证没有错误状态
+        val state = viewModel.uiState.value
+        assertFalse(state is AppListUiState.Error)
+    }
+
+    @Test
+    fun `AppListViewModel_openApp_fails_for_invalid_app`() = runTest {
+        every { mockPackageManager.getLaunchIntentForPackage("com.invalid.app") } returns null
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 打开不存在的应用
+        viewModel.openApp("com.invalid.app")
+        testScheduler.advanceUntilIdle()
+
+        // 验证错误状态
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Error)
+        if (state is AppListUiState.Error) {
+            assertEquals("无法打开该应用", state.message)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_showUninstallConfirm_displays_confirm_state`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app", 0, "Test App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg())
+        }
+        every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 显示卸载确认
+        viewModel.showUninstallConfirm("com.example.app")
+        testScheduler.advanceUntilIdle()
+
+        // 验证卸载确认状态
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.UninstallConfirm)
+        if (state is AppListUiState.UninstallConfirm) {
+            assertEquals("com.example.app", state.app.packageName)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_cancelUninstall_returns_to_list_state`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app", 0, "Test App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg())
+        }
+        every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 显示卸载确认
+        viewModel.showUninstallConfirm("com.example.app")
+        testScheduler.advanceUntilIdle()
+
+        // 验证卸载确认状态
+        assertTrue(viewModel.uiState.value is AppListUiState.UninstallConfirm)
+
+        // 取消卸载
+        viewModel.cancelUninstall()
+        testScheduler.advanceUntilIdle()
+
+        // 验证返回列表状态
+        val finalState = viewModel.uiState.value
+        assertTrue(finalState is AppListUiState.Success)
+    }
+
+    @Test
+    fun `AppListViewModel_showUninstallConfirm_handles_nonexistent_app`() = runTest {
+        every { mockPackageManager.getApplicationInfo("com.nonexistent", PackageManager.GET_META_DATA) }
+            .throws(PackageManager.NameNotFoundException())
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 显示不存在应用的卸载确认
+        viewModel.showUninstallConfirm("com.nonexistent")
+        testScheduler.advanceUntilIdle()
+
+        // 验证错误状态
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Error)
+        if (state is AppListUiState.Error) {
+            assertEquals("应用不存在", state.message)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_getAppDetail_displays_detail_state`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app", 0, "Test App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg())
+        }
+        every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 获取应用详情
+        viewModel.getAppDetail("com.example.app")
+        testScheduler.advanceUntilIdle()
+
+        // 验证详情状态
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.AppDetail)
+        if (state is AppListUiState.AppDetail) {
+            assertEquals("com.example.app", state.app.packageName)
+            assertEquals("Test App", state.app.label.toString())
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_getAppDetail_handles_nonexistent_app`() = runTest {
+        every { mockPackageManager.getApplicationInfo("com.nonexistent", PackageManager.GET_META_DATA) }
+            .throws(PackageManager.NameNotFoundException())
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 获取不存在应用的详情
+        viewModel.getAppDetail("com.nonexistent")
+        testScheduler.advanceUntilIdle()
+
+        // 验证错误状态
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Error)
+        if (state is AppListUiState.Error) {
+            assertEquals("应用不存在", state.message)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_closeDetail_returns_to_list_state`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app", 0, "Test App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg())
+        }
+        every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 获取应用详情
+        viewModel.getAppDetail("com.example.app")
+        testScheduler.advanceUntilIdle()
+
+        // 验证详情状态
+        assertTrue(viewModel.uiState.value is AppListUiState.AppDetail)
+
+        // 关闭详情
+        viewModel.closeDetail()
+        testScheduler.advanceUntilIdle()
+
+        // 验证返回列表状态
+        val finalState = viewModel.uiState.value
+        assertTrue(finalState is AppListUiState.Success)
+    }
+
     // 辅助函数
     private fun createMockApplicationInfo(
         packageName: String,

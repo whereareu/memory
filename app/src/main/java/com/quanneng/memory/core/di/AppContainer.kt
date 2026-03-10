@@ -8,6 +8,7 @@ import androidx.room.Room
 import com.quanneng.memory.core.datastore.MultiInstanceWidgetPreferences
 import com.quanneng.memory.core.dispatchers.DispatcherProvider
 import com.quanneng.memory.core.widget.WidgetUpdater
+import com.quanneng.memory.features.applist.data.AppListRepository
 import com.quanneng.memory.features.flashthought.data.FlashThoughtDao
 import com.quanneng.memory.features.flashthought.data.FlashThoughtDatabase
 import com.quanneng.memory.features.flashthought.data.FlashThoughtRepository
@@ -60,5 +61,9 @@ class AppContainer(context: Context) {
     val flashThoughtRepository: FlashThoughtRepository = FlashThoughtRepository(
         dao = flashThoughtDao,
         dispatchers = dispatcherProvider
+    )
+
+    val appListRepository: AppListRepository = AppListRepository(
+        context = context
     )
 }

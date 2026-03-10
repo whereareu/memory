@@ -149,6 +149,13 @@
             android:exported="false"
             android:theme="@style/Theme.Memory" />
 
+        <!-- 应用列表管理 -->
+        <activity
+            android:name=".features.applist.ui.AppListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Memory"
+            android:label="应用管理" />
+
     </application>
 
 </manifest>

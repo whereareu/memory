@@ -15,6 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.quanneng.memory.features.applist.model.AppInfo
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 应用列表页面
@@ -58,7 +61,7 @@ fun AppListScreen(
                     isRefreshing = isRefreshing,
                     onRefresh = { viewModel.refresh() },
                     onAppClick = { app -> viewModel.getAppDetail(app.packageName) },
-                    onAppLongClick = { app -> viewModel.uninstallApp(app.packageName) },
+                    onAppLongClick = { app -> viewModel.showAppMenu(app) },
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
@@ -78,10 +81,64 @@ fun AppListScreen(
                 AppDetailView(
                     app = state.app,
                     onBack = { viewModel.closeDetail() },
+                    onOpenApp = { viewModel.openApp(state.app.packageName) },
+                    onUninstall = { viewModel.showUninstallConfirm(state.app.packageName) },
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                 )
+            }
+            is AppListUiState.AppMenu -> {
+                // 显示操作菜单
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)) {
+                    // 背景显示列表（半透明）
+                    val previousState = remember { viewModel.uiState.value }
+                    if (previousState is AppListUiState.Success) {
+                        SwipeRefreshView(
+                            apps = previousState.apps,
+                            isRefreshing = isRefreshing,
+                            onRefresh = { viewModel.refresh() },
+                            onAppClick = { app -> viewModel.getAppDetail(app.packageName) },
+                            onAppLongClick = { app -> viewModel.showAppMenu(app) },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    // 操作菜单弹窗
+                    AppMenuDialog(
+                        app = state.app,
+                        onOpenApp = { viewModel.openApp(state.app.packageName) },
+                        onShowDetail = { viewModel.getAppDetail(state.app.packageName) },
+                        onShowUninstallConfirm = { viewModel.showUninstallConfirm(state.app.packageName) },
+                        onDismiss = { viewModel.closeAppMenu() }
+                    )
+                }
+            }
+            is AppListUiState.UninstallConfirm -> {
+                // 显示卸载确认弹窗
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)) {
+                    // 背景显示列表
+                    val previousState = remember { viewModel.uiState.value }
+                    if (previousState is AppListUiState.Success) {
+                        SwipeRefreshView(
+                            apps = previousState.apps,
+                            isRefreshing = isRefreshing,
+                            onRefresh = { viewModel.refresh() },
+                            onAppClick = { app -> viewModel.getAppDetail(app.packageName) },
+                            onAppLongClick = { app -> viewModel.showAppMenu(app) },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    // 卸载确认弹窗
+                    UninstallConfirmDialog(
+                        app = state.app,
+                        onConfirm = { viewModel.uninstallApp(state.app.packageName) },
+                        onDismiss = { viewModel.cancelUninstall() }
+                    )
+                }
             }
         }
     }
@@ -335,39 +392,305 @@ private fun ErrorView(
 private fun AppDetailView(
     app: AppInfo,
     onBack: () -> Unit,
+    onOpenApp: () -> Unit,
+    onUninstall: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("应用详情", style = MaterialTheme.typography.headlineMedium)
+        // 标题栏
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Text("←")
+            }
+            Text("应用详情", style = MaterialTheme.typography.headlineMedium)
+        }
 
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(app.icon)
-                .crossfade(true)
-                .build(),
-            contentDescription = app.label.toString(),
-            modifier = Modifier
-                .size(96.dp)
-                .align(Alignment.CenterHorizontally)
-        )
+        // 应用图标和基本信息
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(app.icon)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = app.label.toString(),
+                modifier = Modifier.size(96.dp)
+            )
 
-        Text("应用名称: ${app.label}")
-        Text("包名: ${app.packageName}")
-        Text("版本: ${app.versionName} (${app.versionCode})")
-        Text("安装时间: ${app.installTime}")
-        Text("更新时间: ${app.lastUpdateTime}")
-        Text("系统应用: ${if (app.isSystemApp) "是" else "否"}")
+            Text(
+                text = app.label.toString(),
+                style = MaterialTheme.typography.headlineSmall
+            )
 
-        Button(
-            onClick = onBack,
+            Text(
+                text = app.packageName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+
+            // 系统应用标识
+            if (app.isSystemApp) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text(
+                        text = "系统应用",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        }
+
+        // 详细信息卡片
+        Card(
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("返回")
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "详细信息",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                HorizontalDivider()
+
+                DetailRow("版本名称", app.versionName ?: "未知")
+                DetailRow("版本号", app.versionCode.toString())
+                DetailRow("安装时间", dateFormat.format(Date(app.installTime)))
+                DetailRow("更新时间", dateFormat.format(Date(app.lastUpdateTime)))
+                DetailRow("系统应用", if (app.isSystemApp) "是" else "否")
+                DetailRow("应用标志", "0x${app.flags.toString(16).uppercase()}")
+            }
+        }
+
+        // 操作按钮
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onOpenApp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开应用")
+            }
+
+            if (!app.isSystemApp) {
+                OutlinedButton(
+                    onClick = onUninstall,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("卸载应用")
+                }
+            }
+
+            OutlinedButton(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("返回列表")
+            }
         }
     }
+}
+
+/**
+ * 详情行组件
+ */
+@Composable
+private fun DetailRow(
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+/**
+ * 应用操作菜单弹窗
+ */
+@Composable
+private fun AppMenuDialog(
+    app: AppInfo,
+    onOpenApp: () -> Unit,
+    onShowDetail: () -> Unit,
+    onShowUninstallConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(app.icon)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = app.label.toString(),
+                    modifier = Modifier.size(32.dp)
+                )
+                Text(app.label.toString())
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(app.packageName, style = MaterialTheme.typography.bodySmall)
+                Text("版本: ${app.versionName}", style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    onClick = {
+                        onOpenApp()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("打开应用")
+                }
+                OutlinedButton(
+                    onClick = {
+                        onShowDetail()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("应用详情")
+                }
+                if (!app.isSystemApp) {
+                    OutlinedButton(
+                        onClick = {
+                            onShowUninstallConfirm()
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("卸载应用")
+                    }
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("取消")
+                }
+            }
+        }
+    )
+}
+
+/**
+ * 卸载确认弹窗
+ */
+@Composable
+private fun UninstallConfirmDialog(
+    app: AppInfo,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("确认卸载")
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(app.icon)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = app.label.toString(),
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Column {
+                        Text(
+                            text = app.label.toString(),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = app.packageName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
+                Text(
+                    text = "确定要卸载此应用吗？卸载后将删除该应用及其所有数据。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("卸载")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }

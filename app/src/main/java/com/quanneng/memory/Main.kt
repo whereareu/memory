@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ class Main : ComponentActivity() {
                     onEditWidget3 = { editWidget(3) },
                     onEditWidget4 = { editWidget(4) },
                     onFlashThoughtList = { openFlashThoughtList() },
+                    onOpenAppList = { openAppList() },
                     onCreateShortcut = { createShortcut() }
                 )
             }
@@ -57,6 +59,10 @@ class Main : ComponentActivity() {
 
     private fun openFlashThoughtList() {
         startActivity(Intent(this, com.quanneng.memory.features.flashthought.ui.FlashThoughtListActivity::class.java))
+    }
+
+    private fun openAppList() {
+        startActivity(Intent(this, com.quanneng.memory.features.applist.ui.AppListActivity::class.java))
     }
 
     private fun createShortcut() {
@@ -90,6 +96,7 @@ fun MainScreen(
     onEditWidget3: () -> Unit,
     onEditWidget4: () -> Unit,
     onFlashThoughtList: () -> Unit,
+    onOpenAppList: () -> Unit,
     onCreateShortcut: () -> Unit
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
@@ -162,6 +169,12 @@ fun MainScreen(
                         label = "闪现",
                         color = Color(0xFFFFB74D),
                         onClick = onFlashThoughtList
+                    )
+                    QuickAccessItem(
+                        icon = Icons.Default.Apps,
+                        label = "应用",
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        onClick = onOpenAppList
                     )
                 }
 
@@ -333,6 +346,7 @@ fun MainScreenPreview() {
             onEditWidget3 = {},
             onEditWidget4 = {},
             onFlashThoughtList = {},
+            onOpenAppList = {},
             onCreateShortcut = {}
         )
     }

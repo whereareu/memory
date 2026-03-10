@@ -107,6 +107,24 @@ class AppListViewModel(
     }
 
     /**
+     * 显示卸载确认对话框
+     */
+    fun showUninstallConfirm(packageName: String) {
+        viewModelScope.launch {
+            try {
+                val app = repository.getAppByPackage(packageName)
+                if (app != null) {
+                    _uiState.value = AppListUiState.UninstallConfirm(app)
+                } else {
+                    _uiState.value = AppListUiState.Error("应用不存在")
+                }
+            } catch (e: Exception) {
+                _uiState.value = AppListUiState.Error(e.message ?: "获取应用信息失败")
+            }
+        }
+    }
+
+    /**
      * 卸载应用
      */
     fun uninstallApp(packageName: String) {
@@ -126,6 +144,16 @@ class AppListViewModel(
     }
 
     /**
+     * 取消卸载确认
+     */
+    fun cancelUninstall() {
+        val currentState = _uiState.value
+        if (currentState is AppListUiState.UninstallConfirm) {
+            refresh()
+        }
+    }
+
+    /**
      * 获取应用详情
      */
     fun getAppDetail(packageName: String) {
@@ -140,6 +168,39 @@ class AppListViewModel(
             } catch (e: Exception) {
                 _uiState.value = AppListUiState.Error(e.message ?: "获取详情失败")
             }
+        }
+    }
+
+    /**
+     * 打开应用
+     */
+    fun openApp(packageName: String) {
+        viewModelScope.launch {
+            try {
+                val success = repository.openApp(packageName)
+                if (!success) {
+                    _uiState.value = AppListUiState.Error("无法打开该应用")
+                }
+            } catch (e: Exception) {
+                _uiState.value = AppListUiState.Error(e.message ?: "打开应用失败")
+            }
+        }
+    }
+
+    /**
+     * 显示应用操作菜单
+     */
+    fun showAppMenu(app: AppInfo) {
+        _uiState.value = AppListUiState.AppMenu(app)
+    }
+
+    /**
+     * 关闭应用操作菜单
+     */
+    fun closeAppMenu() {
+        val currentState = _uiState.value
+        if (currentState is AppListUiState.AppMenu) {
+            refresh()
         }
     }
 
@@ -169,4 +230,6 @@ sealed class AppListUiState {
     ) : AppListUiState()
     data class Error(val message: String) : AppListUiState()
     data class AppDetail(val app: AppInfo) : AppListUiState()
+    data class AppMenu(val app: AppInfo) : AppListUiState()
+    data class UninstallConfirm(val app: AppInfo) : AppListUiState()
 }

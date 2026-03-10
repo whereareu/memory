@@ -55,22 +55,53 @@ class AppListRepository(
     }
 
     /**
-     * 卸载应用（需要 REQUEST_DELETE_PACKAGES 权限）
+     * 打开应用
+     * @param packageName 要打开的包名
+     * @return 是否成功启动应用
+     */
+    @IoDispatcher
+    suspend fun openApp(packageName: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            if (intent != null) {
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * 卸载应用
+     * 使用 ACTION_DELETE Intent 启动系统卸载流程
+     * 适用于所有 Android API 版本，无需特殊权限声明
      * @param packageName 要卸载的包名
      * @return 是否成功启动卸载流程
      */
     @IoDispatcher
     suspend fun uninstallApp(packageName: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
-            // API 26+ 使用隐式 Intent 卸载
+            // 验证应用是否存在
+            packageManager.getPackageInfo(packageName, 0)
+
+            // 创建卸载 Intent
+            // ACTION_DELETE 适用于所有 Android 版本
+            // 系统会弹出确认对话框，用户确认后执行卸载
             val intent = android.content.Intent(android.content.Intent.ACTION_DELETE).apply {
                 data = android.net.Uri.parse("package:$packageName")
                 flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
             }
             context.startActivity(intent)
             true
+        } catch (e: PackageManager.NameNotFoundException) {
+            // 应用不存在
+            false
         } catch (e: Exception) {
+            // 其他错误（如 Activity 不存在、权限问题等）
             false
         }
     }
