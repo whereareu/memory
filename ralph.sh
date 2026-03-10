@@ -266,22 +266,31 @@ execute_loop() {
         return 1
     fi
 
-    # 执行 Claude（带超时，如果可用）
-    local output
+    # 执行 Claude（带超时，如果可用）- 实时输出到终端和日志
     local exit_code=0
+    local temp_output="$LOG_DIR/temp_output_$$.txt"
+
+    # 清理临时文件
+    rm -f "$temp_output"
+
+    log_info "正在调用 Claude，请稍候..."
 
     if [ -n "$TIMEOUT_CMD" ]; then
-        output=$($TIMEOUT_CMD "$MAX_LOOP_TIME" claude --dangerously-skip-permissions -p "$prompt" 2>&1) || exit_code=$?
+        $TIMEOUT_CMD "$MAX_LOOP_TIME" claude --dangerously-skip-permissions -p "$prompt" 2>&1 | tee -a "$LOG_FILE" | tee "$temp_output" || exit_code=$?
     else
-        output=$(claude --dangerously-skip-permissions -p "$prompt" 2>&1) || exit_code=$?
+        claude --dangerously-skip-permissions -p "$prompt" 2>&1 | tee -a "$LOG_FILE" | tee "$temp_output" || exit_code=$?
     fi
 
     # 计算耗时
     local loop_end=$(date +%s)
     local duration=$((loop_end - loop_start))
 
-    # 输出到日志
-    echo "$output" >> "$LOG_FILE"
+    # 读取输出到变量（用于后续检查）
+    local output=""
+    if [ -f "$temp_output" ]; then
+        output=$(cat "$temp_output")
+        rm -f "$temp_output"
+    fi
 
     # 检查超时
     if [ $exit_code -eq 124 ]; then
