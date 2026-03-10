@@ -334,6 +334,72 @@ class AppListTest {
         }
     }
 
+    @Test
+    fun `AppListViewModel_searchApps_filters_results_correctly`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.music", 0, "Music Player"),
+            createMockApplicationInfo("com.example.video", 0, "Video Player"),
+            createMockApplicationInfo("com.example.photos", 0, "Photo Gallery")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 执行搜索
+        viewModel.searchApps("player")
+        testScheduler.advanceUntilIdle()
+
+        // 验证搜索结果
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Success)
+        if (state is AppListUiState.Success) {
+            assertEquals("player", state.searchQuery)
+            assertEquals(2, state.apps.size)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_searchApps_clears_results_with_empty_query`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.music", 0, "Music Player")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 先执行搜索
+        viewModel.searchApps("music")
+        testScheduler.advanceUntilIdle()
+
+        // 清空搜索
+        viewModel.searchApps("")
+        testScheduler.advanceUntilIdle()
+
+        // 验证返回完整列表
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Success)
+        if (state is AppListUiState.Success) {
+            assertEquals("", state.searchQuery)
+            assertEquals(1, state.apps.size)
+        }
+    }
+
     // 辅助函数
     private fun createMockApplicationInfo(
         packageName: String,

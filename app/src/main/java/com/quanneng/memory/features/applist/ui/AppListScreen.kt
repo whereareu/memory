@@ -89,6 +89,7 @@ fun AppListScreen(
 
 /**
  * 应用列表顶部栏
+ * 支持搜索功能
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,16 +99,65 @@ private fun AppListTopBar(
     modifier: Modifier = Modifier
 ) {
     var searchText by remember { mutableStateOf("") }
+    var showSearchBar by remember { mutableStateOf(false) }
 
-    TopAppBar(
-        title = { Text("应用列表") },
-        actions = {
-            IconButton(onClick = onToggleSystemApps) {
-                Text("显示系统应用")
-            }
-        },
-        modifier = modifier
-    )
+    if (showSearchBar) {
+        // 搜索模式
+        TopAppBar(
+            title = {
+                TextField(
+                    value = searchText,
+                    onValueChange = { newText ->
+                        searchText = newText
+                        onSearch(newText)
+                    },
+                    placeholder = { Text("搜索应用...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = {
+                    showSearchBar = false
+                    searchText = ""
+                    onSearch("")
+                }) {
+                    Text("←")
+                }
+            },
+            actions = {
+                if (searchText.isNotEmpty()) {
+                    IconButton(onClick = {
+                        searchText = ""
+                        onSearch("")
+                    }) {
+                        Text("×")
+                    }
+                }
+            },
+            modifier = modifier
+        )
+    } else {
+        // 普通模式
+        TopAppBar(
+            title = { Text("应用列表") },
+            actions = {
+                IconButton(onClick = { showSearchBar = true }) {
+                    Text("搜索")
+                }
+                IconButton(onClick = onToggleSystemApps) {
+                    Text("系统应用")
+                }
+            },
+            modifier = modifier
+        )
+    }
 }
 
 /**
