@@ -4,8 +4,8 @@ import com.quanneng.memory.core.datastore.MultiInstanceWidgetPreferences
 import com.quanneng.memory.core.dispatchers.DispatcherProvider
 import com.quanneng.memory.features.widget.data.WidgetRepository
 import com.quanneng.memory.features.widget.model.WidgetConfig
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
+import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,8 +15,8 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 
 /**
  * 小部件单元测试
@@ -63,8 +63,8 @@ class WidgetTest {
             backgroundColor = 0xFFFFFFFF.toInt()
         )
 
-        every { mockDataSource.saveConfig(1, testConfig) } returns Unit
-        every { mockDataSource.getConfig(1) } returns testConfig
+        coEvery { mockDataSource.saveConfig(1, testConfig) } just Runs
+        coEvery { mockDataSource.getConfig(1) } returns testConfig
 
         val repository = WidgetRepository(mockDataSource, dispatchers)
 
@@ -89,7 +89,7 @@ class WidgetTest {
             backgroundColor = 0xFFFFFFFF.toInt()
         )
 
-        every { mockDataSource.getConfig(1) } returns existingConfig
+        coEvery { mockDataSource.getConfig(1) } returns existingConfig
 
         val repository = WidgetRepository(mockDataSource, dispatchers)
 
@@ -102,7 +102,7 @@ class WidgetTest {
         val mockDataSource = mockk<com.quanneng.memory.features.widget.data.WidgetDataSource>()
         val dispatchers = DispatcherProvider()
 
-        every { mockDataSource.getConfig(1) } returns null
+        coEvery { mockDataSource.getConfig(1) } returns null
 
         val repository = WidgetRepository(mockDataSource, dispatchers)
 
@@ -116,7 +116,7 @@ class WidgetTest {
         val mockDataSource = mockk<com.quanneng.memory.features.widget.data.WidgetDataSource>()
         val dispatchers = DispatcherProvider()
 
-        every { mockDataSource.deleteConfig(1) } returns Unit
+        coEvery { mockDataSource.deleteConfig(1) } just Runs
 
         val repository = WidgetRepository(mockDataSource, dispatchers)
 

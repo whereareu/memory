@@ -4,8 +4,9 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import com.quanneng.memory.core.dispatchers.DispatcherProvider
+import com.quanneng.memory.core.dispatchers.IoDispatcher
 import com.quanneng.memory.features.applist.model.AppInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
@@ -13,8 +14,7 @@ import kotlinx.coroutines.withContext
  * 负责获取、过滤和管理已安装应用信息
  */
 class AppListRepository(
-    private val context: Context,
-    private val dispatchers: DispatcherProvider
+    private val context: Context
 ) {
     private val packageManager: PackageManager
         get() = context.packageManager
@@ -24,7 +24,8 @@ class AppListRepository(
      * @param includeSystemApps 是否包含系统应用
      * @return 应用列表
      */
-    suspend fun getAllApps(includeSystemApps: Boolean = false): List<AppInfo> = withContext(dispatchers.io) {
+    @IoDispatcher
+    suspend fun getAllApps(includeSystemApps: Boolean = false): List<AppInfo> = withContext(Dispatchers.IO) {
         val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
 
         packages.mapNotNull { packageInfo ->
@@ -43,7 +44,8 @@ class AppListRepository(
      * @param packageName 包名
      * @return 应用信息，未找到返回 null
      */
-    suspend fun getAppByPackage(packageName: String): AppInfo? = withContext(dispatchers.io) {
+    @IoDispatcher
+    suspend fun getAppByPackage(packageName: String): AppInfo? = withContext(Dispatchers.IO) {
         try {
             val applicationInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
             applicationInfo.toAppInfo(packageManager)
@@ -57,7 +59,8 @@ class AppListRepository(
      * @param packageName 要卸载的包名
      * @return 是否成功启动卸载流程
      */
-    suspend fun uninstallApp(packageName: String): Boolean = withContext(dispatchers.io) {
+    @IoDispatcher
+    suspend fun uninstallApp(packageName: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
             // API 26+ 使用隐式 Intent 卸载
@@ -78,7 +81,8 @@ class AppListRepository(
      * @param includeSystemApps 是否包含系统应用
      * @return 匹配的应用列表
      */
-    suspend fun searchApps(query: String, includeSystemApps: Boolean = false): List<AppInfo> = withContext(dispatchers.io) {
+    @IoDispatcher
+    suspend fun searchApps(query: String, includeSystemApps: Boolean = false): List<AppInfo> = withContext(Dispatchers.IO) {
         val allApps = getAllApps(includeSystemApps)
         if (query.isBlank()) {
             allApps
@@ -94,7 +98,8 @@ class AppListRepository(
     /**
      * 获取系统应用数量
      */
-    suspend fun getSystemAppsCount(): Int = withContext(dispatchers.io) {
+    @IoDispatcher
+    suspend fun getSystemAppsCount(): Int = withContext(Dispatchers.IO) {
         packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
             .count { it.flags and ApplicationInfo.FLAG_SYSTEM != 0 }
     }
@@ -102,7 +107,8 @@ class AppListRepository(
     /**
      * 获取用户应用数量
      */
-    suspend fun getUserAppsCount(): Int = withContext(dispatchers.io) {
+    @IoDispatcher
+    suspend fun getUserAppsCount(): Int = withContext(Dispatchers.IO) {
         packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
             .count { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
     }

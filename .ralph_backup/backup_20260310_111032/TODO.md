@@ -7,12 +7,12 @@
 
 ### 应用列表管理功能（AppList Feature）
 
-- [x] 1. 创建数据层 - AppListRepository
-  - [x] 1.1 定义 AppInfo 数据模型（packageName, label, icon, version, installTime）
-  - [x] 1.2 实现 PackageManager 封装，获取所有已安装应用
-  - [x] 1.3 实现应用卸载接口（suspend + @IoDispatcher）
-  - [x] 1.4 实现应用详情查询接口
-  - [x] 1.5 添加应用过滤逻辑（系统应用/用户应用）
+- [ ] 1. 创建数据层 - AppListRepository
+  - [ ] 1.1 定义 AppInfo 数据模型（packageName, label, icon, version, installTime）
+  - [ ] 1.2 实现 PackageManager 封装，获取所有已安装应用
+  - [ ] 1.3 实现应用卸载接口（suspend + @IoDispatcher）
+  - [ ] 1.4 实现应用详情查询接口
+  - [ ] 1.5 添加应用过滤逻辑（系统应用/用户应用）
 
 - [ ] 2. 创建 ViewModel - AppListViewModel
   - [ ] 2.1 实现 Flow<State> 状态管理
@@ -42,11 +42,11 @@
   - [ ] 5.3 处理 API 26+ 卸载权限兼容
 
 - [ ] 6. 单元测试 - AppListTest.kt
-  - [x] 6.1 测试 Repository 获取应用列表
-  - [x] 6.2 测试应用过滤逻辑
+  - [ ] 6.1 测试 Repository 获取应用列表
+  - [ ] 6.2 测试应用过滤逻辑
   - [ ] 6.3 测试 ViewModel 状态变化
   - [ ] 6.4 测试下拉刷新 Flow
-  - [x] 6.5 测试卸载功能
+  - [ ] 6.5 测试卸载功能
   - [ ] 6.6 确保覆盖率 ≥ 80%
 
 - [ ] 7. 文档与配套

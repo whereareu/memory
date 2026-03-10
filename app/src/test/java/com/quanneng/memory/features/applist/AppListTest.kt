@@ -5,11 +5,10 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
-import com.quanneng.memory.core.dispatchers.DispatcherProvider
 import com.quanneng.memory.features.applist.data.AppListRepository
 import com.quanneng.memory.features.applist.model.AppInfo
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
+import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -19,11 +18,11 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * 应用列表单元测试
@@ -35,14 +34,12 @@ class AppListTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var mockContext: Context
     private lateinit var mockPackageManager: PackageManager
-    private lateinit var dispatchers: DispatcherProvider
 
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         mockContext = mockk()
         mockPackageManager = mockk()
-        dispatchers = DispatcherProvider()
 
         every { mockContext.packageManager } returns mockPackageManager
         every { mockContext.startActivity(any()) } returns Unit
@@ -75,7 +72,7 @@ class AppListTest {
         every { mockPackageManager.getPackageInfo("com.example.app", 0) } returns createMockPackageInfo("com.example.app")
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getAllApps(includeSystemApps = false)
 
         // 验证
@@ -93,12 +90,12 @@ class AppListTest {
         )
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
-        every { mockPackageManager.getPackageInfo(any(), 0) } answers {
-            createMockPackageInfo(firstArg())
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
         }
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getAllApps(includeSystemApps = true)
 
         // 验证
@@ -115,12 +112,12 @@ class AppListTest {
         )
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
-        every { mockPackageManager.getPackageInfo(any(), 0) } answers {
-            createMockPackageInfo(firstArg())
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
         }
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getAllApps(includeSystemApps = false)
 
         // 验证排序
@@ -138,12 +135,12 @@ class AppListTest {
         every { mockPackageManager.getPackageInfo(packageName, 0) } returns createMockPackageInfo(packageName)
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getAppByPackage(packageName)
 
         // 验证
         assertNotNull(result)
-        assertEquals(packageName, result.packageName)
+        assertEquals(packageName, result!!.packageName)
         assertEquals("Test App", result.label.toString())
     }
 
@@ -155,7 +152,7 @@ class AppListTest {
             .throws(PackageManager.NameNotFoundException())
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getAppByPackage(packageName)
 
         // 验证
@@ -171,12 +168,12 @@ class AppListTest {
         )
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
-        every { mockPackageManager.getPackageInfo(any(), 0) } answers {
-            createMockPackageInfo(firstArg())
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
         }
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.searchApps("player", includeSystemApps = false)
 
         // 验证搜索结果
@@ -193,12 +190,12 @@ class AppListTest {
         )
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
-        every { mockPackageManager.getPackageInfo(any(), 0) } answers {
-            createMockPackageInfo(firstArg())
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
         }
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val resultLower = repository.searchApps("test", includeSystemApps = false)
         val resultUpper = repository.searchApps("TEST", includeSystemApps = false)
         val resultMixed = repository.searchApps("TeSt", includeSystemApps = false)
@@ -220,7 +217,7 @@ class AppListTest {
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getSystemAppsCount()
 
         // 验证
@@ -238,7 +235,7 @@ class AppListTest {
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
 
         // 执行测试
-        val repository = AppListRepository(mockContext, dispatchers)
+        val repository = AppListRepository(mockContext)
         val result = repository.getUserAppsCount()
 
         // 验证
