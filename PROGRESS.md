@@ -1,8 +1,8 @@
 # Ralph Loop 进度记录
 
 开始时间：2025-03-10
-当前完成度：0%
-已执行循环次数：1
+当前完成度：15%
+已执行循环次数：3
 
 ## 变更历史
 
@@ -30,3 +30,16 @@
 - 日志轮转与大小控制
 - 完成通知（macOS/Linux）
 - 优雅退出（Ctrl+C）
+
+### 2025-03-10 - 循环 #3
+**任务**: 修复 AppListRepository 数据层架构合规性
+**状态**: ✅ 完成
+**提交**: 50daac6 feat: 修复 AppListRepository 数据层架构合规性
+**变更内容**:
+- 创建 @IoDispatcher 注解用于标记数据层函数
+- 移除 Repository 中的 DispatcherProvider 依赖
+- 所有 suspend 函数使用 @IoDispatcher + withContext(Dispatchers.IO)
+- 修复单元测试框架兼容性（JUnit4 → JUnit5）
+- 修复 MockK 测试语法（coEvery for suspend functions）
+- 数据层任务（1.1-1.5）全部完成
+- 下一步：实现 AppListViewModel
