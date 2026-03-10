@@ -1,0 +1,4 @@
+./ralph.sh: line 84: stdbuf: command not found
+[0;31m[ERROR][0m 11:29:42 - 循环 #1 失败
+[1;33m[WARNING][0m 11:29:42 - 连续错误: 1/3
+[0;34m[INFO][0m 11:29:42 - 等待 30 秒后重试...
