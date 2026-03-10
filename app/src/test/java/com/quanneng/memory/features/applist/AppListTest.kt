@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import com.quanneng.memory.features.applist.data.AppListRepository
 import com.quanneng.memory.features.applist.model.AppInfo
+import com.quanneng.memory.features.applist.ui.AppListUiState
+import com.quanneng.memory.features.applist.ui.AppListViewModel
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Dispatchers
@@ -240,6 +242,96 @@ class AppListTest {
 
         // 验证
         assertEquals(2, result)
+    }
+
+    // ViewModel 测试
+
+    @Test
+    fun `AppListViewModel_refresh_sets_isRefreshing_state_correctly`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app1", 0, "App1"),
+            createMockApplicationInfo("com.example.app2", 0, "App2")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+        var initialState = viewModel.uiState.value
+        assertTrue(initialState is AppListUiState.Success)
+        assertFalse((initialState as AppListUiState.Success).isRefreshing)
+
+        // 执行刷新
+        viewModel.refresh()
+        testScheduler.advanceUntilIdle()
+
+        // 验证刷新完成后的状态
+        val finalState = viewModel.uiState.value
+        assertTrue(finalState is AppListUiState.Success)
+        assertFalse((finalState as AppListUiState.Success).isRefreshing)
+    }
+
+    @Test
+    fun `AppListViewModel_refresh_maintains_includeSystemApps_preference`() = runTest {
+        val apps = listOf(
+            createMockApplicationInfo("com.android.system", ApplicationInfo.FLAG_SYSTEM, "System"),
+            createMockApplicationInfo("com.example.app", 0, "User App")
+        )
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
+
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository)
+
+        // 等待初始加载完成
+        testScheduler.advanceUntilIdle()
+
+        // 切换到显示系统应用
+        viewModel.toggleSystemApps()
+        testScheduler.advanceUntilIdle()
+
+        var stateBeforeRefresh = viewModel.uiState.value
+        assertTrue(stateBeforeRefresh is AppListUiState.Success)
+        assertTrue((stateBeforeRefresh as AppListUiState.Success).includeSystemApps)
+
+        // 执行刷新
+        viewModel.refresh()
+        testScheduler.advanceUntilIdle()
+
+        // 验证刷新后仍然显示系统应用
+        val stateAfterRefresh = viewModel.uiState.value
+        assertTrue(stateAfterRefresh is AppListUiState.Success)
+        assertTrue((stateAfterRefresh as AppListUiState.Success).includeSystemApps)
+        assertEquals(2, stateAfterRefresh.apps.size)
+    }
+
+    @Test
+    fun `AppListViewModel_refresh_handles_error_gracefully`() = runTest {
+        val repository = mockk<AppListRepository>()
+        coEvery { repository.getAllApps(any()) } throws Exception("网络错误")
+
+        val viewModel = AppListViewModel(repository)
+        testScheduler.advanceUntilIdle()
+
+        // 执行刷新
+        viewModel.refresh()
+        testScheduler.advanceUntilIdle()
+
+        // 验证错误状态
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Error)
+        if (state is AppListUiState.Error) {
+            assertEquals("刷新失败", state.message)
+        }
     }
 
     // 辅助函数

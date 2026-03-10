@@ -48,12 +48,28 @@ class AppListViewModel(
      * 刷新应用列表（下拉刷新）
      */
     fun refresh() {
-        val currentState = _uiState.value
-        val includeSystemApps = when (currentState) {
-            is AppListUiState.Success -> currentState.includeSystemApps
-            else -> false
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            val includeSystemApps = when (currentState) {
+                is AppListUiState.Success -> currentState.includeSystemApps
+                else -> false
+            }
+            // 设置刷新状态
+            if (currentState is AppListUiState.Success) {
+                _uiState.value = currentState.copy(isRefreshing = true)
+            }
+            try {
+                val apps = repository.getAllApps(includeSystemApps)
+                _uiState.value = AppListUiState.Success(
+                    apps = apps,
+                    includeSystemApps = includeSystemApps,
+                    searchQuery = "",
+                    isRefreshing = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = AppListUiState.Error(e.message ?: "刷新失败")
+            }
         }
-        loadApps(includeSystemApps)
     }
 
     /**
