@@ -42,6 +42,9 @@ init() {
         echo '{"loop_count":0,"success_count":0,"error_count":0,"total_time":0,"start_time":"'$(date -Iseconds)'"}' > "$STATS_FILE"
     fi
 
+    # 检测系统并设置 timeout 命令
+    detect_system
+
     # 创建备份
     if [ "$ENABLE_BACKUP" = true ]; then
         create_backup
@@ -49,6 +52,25 @@ init() {
 
     # 检查必要文件
     check_prerequisites
+}
+
+# ============== 系统检测 ==============
+detect_system() {
+    # 检测 macOS 或 Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS: 尝试使用 gtimeout（如果安装了 coreutils）
+        if command -v gtimeout &> /dev/null; then
+            TIMEOUT_CMD="gtimeout"
+        else
+            # macOS 没有 coreutils，禁用超时功能
+            log_warning "macOS 检测到 gtimeout 未安装，超时功能已禁用"
+            log_warning "安装方法: brew install coreutils"
+            TIMEOUT_CMD=""
+        fi
+    else
+        # Linux: 使用标准 timeout
+        TIMEOUT_CMD="timeout"
+    fi
 }
 
 # ============== 检查前提条件 ==============
@@ -244,11 +266,15 @@ execute_loop() {
         return 1
     fi
 
-    # 执行 Claude（带超时）
+    # 执行 Claude（带超时，如果可用）
     local output
     local exit_code=0
 
-    output=$(timeout "$MAX_LOOP_TIME" claude --dangerously-skip-permissions -p "$prompt" 2>&1) || exit_code=$?
+    if [ -n "$TIMEOUT_CMD" ]; then
+        output=$($TIMEOUT_CMD "$MAX_LOOP_TIME" claude --dangerously-skip-permissions -p "$prompt" 2>&1) || exit_code=$?
+    else
+        output=$(claude --dangerously-skip-permissions -p "$prompt" 2>&1) || exit_code=$?
+    fi
 
     # 计算耗时
     local loop_end=$(date +%s)
