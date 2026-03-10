@@ -52,8 +52,8 @@ execute_loop() {
     echo ""
 
     # 读取当前 TODO 状态
-    local total=$(grep -c "^- \[ \]" TODO.md 2>/dev/null || echo 0)
-    local done=$(grep -c "^- \[x\]" TODO.md 2>/dev/null || echo 0)
+    local total=$(grep "^- \[ \]" TODO.md 2>/dev/null | wc -l | tr -d ' ')
+    local done=$(grep "^- \[x\]" TODO.md 2>/dev/null | wc -l | tr -d ' ')
 
     echo -e "${BLUE}📋 当前进度: $done / $((total + done)) 任务完成${NC}"
     echo -e "${BLUE}🔄 正在调用 Claude...${NC}"
