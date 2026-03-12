@@ -1,8 +1,12 @@
 package com.quanneng.memory.features.applist.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.quanneng.memory.features.applist.data.AppSortType
 import com.quanneng.memory.features.applist.model.AppInfo
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -44,7 +49,8 @@ fun AppListScreen(
         topBar = {
             AppListTopBar(
                 onSearch = { query -> viewModel.searchApps(query) },
-                onToggleSystemApps = { viewModel.toggleSystemApps() }
+                sortType = viewModel.getCurrentSortType(),
+                onSortTypeChange = { sortType -> viewModel.setSortType(sortType) }
             )
         },
         modifier = modifier
@@ -146,17 +152,19 @@ fun AppListScreen(
 
 /**
  * 应用列表顶部栏
- * 支持搜索功能
+ * 支持搜索功能和排序选项
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppListTopBar(
     onSearch: (String) -> Unit,
-    onToggleSystemApps: () -> Unit,
+    sortType: AppSortType,
+    onSortTypeChange: (AppSortType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var searchText by remember { mutableStateOf("") }
     var showSearchBar by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
     if (showSearchBar) {
         // 搜索模式
@@ -205,11 +213,39 @@ private fun AppListTopBar(
         TopAppBar(
             title = { Text("应用列表") },
             actions = {
+                // 排序按钮
+                Box {
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Text("排序")
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false }
+                    ) {
+                        val sortOptions = mapOf(
+                            AppSortType.BY_NAME to "按名称",
+                            AppSortType.BY_INSTALL_TIME to "按安装时间",
+                            AppSortType.BY_UPDATE_TIME to "按更新时间"
+                        )
+                        sortOptions.forEach { (type, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    onSortTypeChange(type)
+                                    showSortMenu = false
+                                },
+                                trailingIcon = {
+                                    if (type == sortType) {
+                                        Text("✓")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
                 IconButton(onClick = { showSearchBar = true }) {
                     Text("搜索")
-                }
-                IconButton(onClick = onToggleSystemApps) {
-                    Text("系统应用")
                 }
             },
             modifier = modifier
@@ -218,7 +254,7 @@ private fun AppListTopBar(
 }
 
 /**
- * 下拉刷新视图
+ * 下拉刷新视图 - 网格布局
  */
 @Composable
 private fun SwipeRefreshView(
@@ -230,13 +266,15 @@ private fun SwipeRefreshView(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
             contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // 刷新指示器
             if (isRefreshing) {
-                item {
+                item(span = { GridItemSpan(3) }) {
                     CircularProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -246,9 +284,9 @@ private fun SwipeRefreshView(
                 }
             }
 
-            // 应用列表
+            // 应用网格
             items(apps) { app ->
-                AppListItem(
+                AppGridItem(
                     app = app,
                     onClick = { onAppClick(app) },
                     onLongClick = { onAppLongClick(app) }
@@ -259,7 +297,57 @@ private fun SwipeRefreshView(
 }
 
 /**
- * 应用列表项
+ * 应用网格项
+ */
+@Composable
+private fun AppGridItem(
+    app: AppInfo,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+                .then(
+                    Modifier.clickable(
+                        onClick = onLongClick,
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    )
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 应用图标
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(app.icon)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = app.label.toString(),
+                modifier = Modifier.size(56.dp)
+            )
+
+            // 应用名称
+            Text(
+                text = app.label.toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * 应用列表项（保留用于其他可能的用途）
  */
 @Composable
 private fun AppListItem(

@@ -1,8 +1,10 @@
 package com.quanneng.memory.features.applist.ui
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quanneng.memory.features.applist.data.AppListRepository
+import com.quanneng.memory.features.applist.data.AppSortType
 import com.quanneng.memory.features.applist.model.AppInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,12 +16,17 @@ import kotlinx.coroutines.launch
  * 处理应用列表的业务逻辑
  */
 class AppListViewModel(
-    private val repository: AppListRepository
+    private val repository: AppListRepository,
+    private val context: Context
 ) : ViewModel() {
 
     // UI状态
     private val _uiState = MutableStateFlow<AppListUiState>(AppListUiState.Loading)
     val uiState: StateFlow<AppListUiState> = _uiState.asStateFlow()
+
+    // 排序类型（默认按名称）
+    private val _sortType = MutableStateFlow(AppSortType.BY_NAME)
+    val sortType: StateFlow<AppSortType> = _sortType.asStateFlow()
 
     init {
         loadApps()
@@ -28,14 +35,13 @@ class AppListViewModel(
     /**
      * 加载应用列表
      */
-    fun loadApps(includeSystemApps: Boolean = false) {
+    fun loadApps() {
         viewModelScope.launch {
             _uiState.value = AppListUiState.Loading
             try {
-                val apps = repository.getAllApps(includeSystemApps)
+                val apps = repository.getAllApps(_sortType.value)
                 _uiState.value = AppListUiState.Success(
                     apps = apps,
-                    includeSystemApps = includeSystemApps,
                     searchQuery = ""
                 )
             } catch (e: Exception) {
@@ -50,19 +56,14 @@ class AppListViewModel(
     fun refresh() {
         viewModelScope.launch {
             val currentState = _uiState.value
-            val includeSystemApps = when (currentState) {
-                is AppListUiState.Success -> currentState.includeSystemApps
-                else -> false
-            }
             // 设置刷新状态
             if (currentState is AppListUiState.Success) {
                 _uiState.value = currentState.copy(isRefreshing = true)
             }
             try {
-                val apps = repository.getAllApps(includeSystemApps)
+                val apps = repository.getAllApps(_sortType.value)
                 _uiState.value = AppListUiState.Success(
                     apps = apps,
-                    includeSystemApps = includeSystemApps,
                     searchQuery = "",
                     isRefreshing = false
                 )
@@ -81,7 +82,7 @@ class AppListViewModel(
             if (currentState is AppListUiState.Success) {
                 _uiState.value = currentState.copy(searchQuery = query, isSearching = true)
                 try {
-                    val apps = repository.searchApps(query, currentState.includeSystemApps)
+                    val apps = repository.searchApps(query, _sortType.value)
                     _uiState.value = currentState.copy(
                         apps = apps,
                         searchQuery = query,
@@ -95,15 +96,19 @@ class AppListViewModel(
     }
 
     /**
-     * 切换系统应用显示
+     * 设置排序类型
      */
-    fun toggleSystemApps() {
-        val currentState = _uiState.value
-        val newIncludeState = when (currentState) {
-            is AppListUiState.Success -> !currentState.includeSystemApps
-            else -> false
-        }
-        loadApps(newIncludeState)
+    fun setSortType(sortType: AppSortType) {
+        _sortType.value = sortType
+        // 重新加载应用列表
+        loadApps()
+    }
+
+    /**
+     * 获取当前排序类型
+     */
+    fun getCurrentSortType(): AppSortType {
+        return _sortType.value
     }
 
     /**
@@ -223,7 +228,6 @@ sealed class AppListUiState {
     object Loading : AppListUiState()
     data class Success(
         val apps: List<AppInfo>,
-        val includeSystemApps: Boolean,
         val searchQuery: String,
         val isSearching: Boolean = false,
         val isRefreshing: Boolean = false

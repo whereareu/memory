@@ -39,6 +39,14 @@ android {
         buildConfig true
         compose true
     }
+
+    testOptions {
+        unitTests {
+            all {
+                useJUnitPlatform()
+            }
+        }
+    }
 }
 
 dependencies {

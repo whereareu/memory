@@ -6,14 +6,15 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import com.quanneng.memory.features.applist.data.AppListRepository
+import com.quanneng.memory.features.applist.data.AppSortType
 import com.quanneng.memory.features.applist.model.AppInfo
 import com.quanneng.memory.features.applist.ui.AppListUiState
 import com.quanneng.memory.features.applist.ui.AppListViewModel
 import io.mockk.*
-import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -33,80 +34,85 @@ import org.junit.jupiter.api.Assertions.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppListTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var mockContext: Context
     private lateinit var mockPackageManager: PackageManager
 
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        mockContext = mockk()
-        mockPackageManager = mockk()
+        mockContext = mockk(relaxed = true)
+        mockPackageManager = mockk(relaxed = true)
 
         every { mockContext.packageManager } returns mockPackageManager
         every { mockContext.startActivity(any()) } returns Unit
+        every { mockContext.applicationContext } returns mockContext
+        every { mockPackageManager.getLaunchIntentForPackage(any()) } returns null
     }
 
     @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
+        clearAllMocks()
     }
 
     @Test
-    fun `AppListRepository_getAllApps_excludes_system_apps_by_default`() = runTest {
-        // 准备测试数据
+    fun `AppListRepository_getAllApps_returns_all_apps_sorted_by_name_by_default`() = runTest(testDispatcher) {
         val systemApp = createMockApplicationInfo(
             packageName = "com.android.system",
             flags = ApplicationInfo.FLAG_SYSTEM,
             label = "System App"
         )
-        val userApp = createMockApplicationInfo(
-            packageName = "com.example.app",
+        val userApp1 = createMockApplicationInfo(
+            packageName = "com.example.beta",
             flags = 0,
-            label = "User App"
+            label = "Beta App"
+        )
+        val userApp2 = createMockApplicationInfo(
+            packageName = "com.example.alpha",
+            flags = 0,
+            label = "Alpha App"
         )
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) }
-            .returns(listOf(systemApp, userApp))
+            .returns(listOf(systemApp, userApp1, userApp2))
 
-        // 模拟 PackageInfo
         every { mockPackageManager.getPackageInfo("com.android.system", 0) } returns createMockPackageInfo("com.android.system")
-        every { mockPackageManager.getPackageInfo("com.example.app", 0) } returns createMockPackageInfo("com.example.app")
+        every { mockPackageManager.getPackageInfo("com.example.beta", 0) } returns createMockPackageInfo("com.example.beta")
+        every { mockPackageManager.getPackageInfo("com.example.alpha", 0) } returns createMockPackageInfo("com.example.alpha")
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
-        val result = repository.getAllApps(includeSystemApps = false)
+        val result = repository.getAllApps()
 
-        // 验证
-        assertEquals(1, result.size)
-        assertEquals("com.example.app", result[0].packageName)
-        assertFalse(result[0].isSystemApp)
+        assertEquals(3, result.size)
+        assertEquals("Alpha App", result[0].label.toString())
+        assertEquals("Beta App", result[1].label.toString())
+        assertEquals("System App", result[2].label.toString())
     }
 
     @Test
-    fun `AppListRepository_getAllApps_includes_system_apps_when_requested`() = runTest {
-        // 准备测试数据
-        val apps = listOf(
-            createMockApplicationInfo("com.android.system", ApplicationInfo.FLAG_SYSTEM, "System App"),
-            createMockApplicationInfo("com.example.app", 0, "User App")
-        )
+    fun `AppListRepository_getAllApps_with_sortType_sorts_by_install_time`() = runTest(testDispatcher) {
+        val oldApp = createMockApplicationInfo("com.example.old", 0, "Old App")
+        val newApp = createMockApplicationInfo("com.example.new", 0, "New App")
 
-        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
-        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
-            createMockPackageInfo(firstArg<String>())
-        }
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns listOf(oldApp, newApp)
 
-        // 执行测试
+        val oldPackageInfo = createMockPackageInfo("com.example.old", installTime = 1000L)
+        val newPackageInfo = createMockPackageInfo("com.example.new", installTime = 2000L)
+
+        every { mockPackageManager.getPackageInfo("com.example.old", 0) } returns oldPackageInfo
+        every { mockPackageManager.getPackageInfo("com.example.new", 0) } returns newPackageInfo
+
         val repository = AppListRepository(mockContext)
-        val result = repository.getAllApps(includeSystemApps = true)
+        val result = repository.getAllApps(sortType = AppSortType.BY_INSTALL_TIME)
 
-        // 验证
         assertEquals(2, result.size)
+        assertEquals("New App", result[0].label.toString())
+        assertEquals("Old App", result[1].label.toString())
     }
 
     @Test
-    fun `AppListRepository_getAllApps_sorts_by_label_alphabetically`() = runTest {
-        // 准备测试数据（乱序）
+    fun `AppListRepository_getAllApps_with_BY_NAME_sortType_sorts_alphabetically`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.c", 0, "Charlie"),
             createMockApplicationInfo("com.a", 0, "Alpha"),
@@ -118,51 +124,46 @@ class AppListTest {
             createMockPackageInfo(firstArg<String>())
         }
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
-        val result = repository.getAllApps(includeSystemApps = false)
+        val result = repository.getAllApps(sortType = AppSortType.BY_NAME)
 
-        // 验证排序
+        assertEquals(3, result.size)
         assertEquals("Alpha", result[0].label.toString())
         assertEquals("Bravo", result[1].label.toString())
         assertEquals("Charlie", result[2].label.toString())
     }
 
     @Test
-    fun `AppListRepository_getAppByPackage_returns_app_when_found`() = runTest {
+    fun `AppListRepository_getAppByPackage_returns_app_when_found`() = runTest(testDispatcher) {
         val packageName = "com.example.app"
         val appInfo = createMockApplicationInfo(packageName, 0, "Test App")
 
         every { mockPackageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA) } returns appInfo
         every { mockPackageManager.getPackageInfo(packageName, 0) } returns createMockPackageInfo(packageName)
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
         val result = repository.getAppByPackage(packageName)
 
-        // 验证
         assertNotNull(result)
         assertEquals(packageName, result!!.packageName)
         assertEquals("Test App", result.label.toString())
     }
 
     @Test
-    fun `AppListRepository_getAppByPackage_returns_null_when_not_found`() = runTest {
+    fun `AppListRepository_getAppByPackage_returns_null_when_not_found`() = runTest(testDispatcher) {
         val packageName = "com.nonexistent"
 
         every { mockPackageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA) }
             .throws(PackageManager.NameNotFoundException())
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
         val result = repository.getAppByPackage(packageName)
 
-        // 验证
         assertNull(result)
     }
 
     @Test
-    fun `AppListRepository_searchApps_filters_by_package_name_and_label`() = runTest {
+    fun `AppListRepository_searchApps_filters_by_package_name_and_label`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.music", 0, "Music Player"),
             createMockApplicationInfo("com.example.video", 0, "Video Player"),
@@ -174,11 +175,9 @@ class AppListTest {
             createMockPackageInfo(firstArg<String>())
         }
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
-        val result = repository.searchApps("player", includeSystemApps = false)
+        val result = repository.searchApps("player")
 
-        // 验证搜索结果
         assertEquals(2, result.size)
         assertTrue(result.any { it.packageName == "com.example.music" })
         assertTrue(result.any { it.packageName == "com.example.video" })
@@ -186,7 +185,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListRepository_searchApps_case_insensitive`() = runTest {
+    fun `AppListRepository_searchApps_case_insensitive`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -196,20 +195,18 @@ class AppListTest {
             createMockPackageInfo(firstArg<String>())
         }
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
-        val resultLower = repository.searchApps("test", includeSystemApps = false)
-        val resultUpper = repository.searchApps("TEST", includeSystemApps = false)
-        val resultMixed = repository.searchApps("TeSt", includeSystemApps = false)
+        val resultLower = repository.searchApps("test")
+        val resultUpper = repository.searchApps("TEST")
+        val resultMixed = repository.searchApps("TeSt")
 
-        // 验证大小写不敏感
         assertEquals(1, resultLower.size)
         assertEquals(1, resultUpper.size)
         assertEquals(1, resultMixed.size)
     }
 
     @Test
-    fun `AppListRepository_getSystemAppsCount_returns_correct_count`() = runTest {
+    fun `AppListRepository_getSystemAppsCount_returns_correct_count`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.android.system1", ApplicationInfo.FLAG_SYSTEM, "System1"),
             createMockApplicationInfo("com.android.system2", ApplicationInfo.FLAG_SYSTEM, "System2"),
@@ -218,16 +215,14 @@ class AppListTest {
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
         val result = repository.getSystemAppsCount()
 
-        // 验证
         assertEquals(2, result)
     }
 
     @Test
-    fun `AppListRepository_getUserAppsCount_returns_correct_count`() = runTest {
+    fun `AppListRepository_getUserAppsCount_returns_correct_count`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.android.system", ApplicationInfo.FLAG_SYSTEM, "System"),
             createMockApplicationInfo("com.example.app1", 0, "User App1"),
@@ -236,18 +231,16 @@ class AppListTest {
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
 
-        // 执行测试
         val repository = AppListRepository(mockContext)
         val result = repository.getUserAppsCount()
 
-        // 验证
         assertEquals(2, result)
     }
 
     // ViewModel 测试
 
     @Test
-    fun `AppListViewModel_refresh_sets_isRefreshing_state_correctly`() = runTest {
+    fun `AppListViewModel_init_loads_apps_successfully`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app1", 0, "App1"),
             createMockApplicationInfo("com.example.app2", 0, "App2")
@@ -259,29 +252,24 @@ class AppListTest {
         }
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
-        var initialState = viewModel.uiState.value
-        assertTrue(initialState is AppListUiState.Success)
-        assertFalse((initialState as AppListUiState.Success).isRefreshing)
+        // 等待异步操作完成
+        advanceUntilIdle()
 
-        // 执行刷新
-        viewModel.refresh()
-        testScheduler.advanceUntilIdle()
-
-        // 验证刷新完成后的状态
-        val finalState = viewModel.uiState.value
-        assertTrue(finalState is AppListUiState.Success)
-        assertFalse((finalState as AppListUiState.Success).isRefreshing)
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Success)
+        if (state is AppListUiState.Success) {
+            assertEquals(2, state.apps.size)
+            assertFalse(state.isRefreshing)
+        }
     }
 
     @Test
-    fun `AppListViewModel_refresh_maintains_includeSystemApps_preference`() = runTest {
+    fun `AppListViewModel_refresh_sets_isRefreshing_state_correctly`() = runTest(testDispatcher) {
         val apps = listOf(
-            createMockApplicationInfo("com.android.system", ApplicationInfo.FLAG_SYSTEM, "System"),
-            createMockApplicationInfo("com.example.app", 0, "User App")
+            createMockApplicationInfo("com.example.app1", 0, "App1"),
+            createMockApplicationInfo("com.example.app2", 0, "App2")
         )
 
         every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
@@ -290,52 +278,91 @@ class AppListTest {
         }
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 切换到显示系统应用
-        viewModel.toggleSystemApps()
-        testScheduler.advanceUntilIdle()
+        val initialState = viewModel.uiState.value
+        assertTrue(initialState is AppListUiState.Success)
+        assertFalse((initialState as AppListUiState.Success).isRefreshing)
 
-        var stateBeforeRefresh = viewModel.uiState.value
-        assertTrue(stateBeforeRefresh is AppListUiState.Success)
-        assertTrue((stateBeforeRefresh as AppListUiState.Success).includeSystemApps)
-
-        // 执行刷新
         viewModel.refresh()
-        testScheduler.advanceUntilIdle()
 
-        // 验证刷新后仍然显示系统应用
-        val stateAfterRefresh = viewModel.uiState.value
-        assertTrue(stateAfterRefresh is AppListUiState.Success)
-        assertTrue((stateAfterRefresh as AppListUiState.Success).includeSystemApps)
-        assertEquals(2, stateAfterRefresh.apps.size)
+        // 等待刷新完成
+        advanceUntilIdle()
+
+        val finalState = viewModel.uiState.value
+        assertTrue(finalState is AppListUiState.Success)
+        assertFalse((finalState as AppListUiState.Success).isRefreshing)
     }
 
     @Test
-    fun `AppListViewModel_refresh_handles_error_gracefully`() = runTest {
-        val repository = mockk<AppListRepository>()
-        coEvery { repository.getAllApps(any()) } throws Exception("网络错误")
+    fun `AppListViewModel_refresh_maintains_sortType_preference`() = runTest(testDispatcher) {
+        val apps = listOf(
+            createMockApplicationInfo("com.example.app1", 0, "App1"),
+            createMockApplicationInfo("com.example.app2", 0, "App2")
+        )
 
-        val viewModel = AppListViewModel(repository)
-        testScheduler.advanceUntilIdle()
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns apps
+        every { mockPackageManager.getPackageInfo(any<String>(), 0) } answers {
+            createMockPackageInfo(firstArg<String>())
+        }
 
-        // 执行刷新
+        val repository = AppListRepository(mockContext)
+        val viewModel = AppListViewModel(repository, mockContext)
+
+        // 等待初始化完成
+        advanceUntilIdle()
+
+        viewModel.setSortType(AppSortType.BY_INSTALL_TIME)
+
+        // 等待 setSortType 完成
+        advanceUntilIdle()
+
+        val stateBeforeRefresh = viewModel.uiState.value
+        assertTrue(stateBeforeRefresh is AppListUiState.Success)
+        assertEquals(AppSortType.BY_INSTALL_TIME, viewModel.getCurrentSortType())
+
         viewModel.refresh()
-        testScheduler.advanceUntilIdle()
 
-        // 验证错误状态
-        val state = viewModel.uiState.value
-        assertTrue(state is AppListUiState.Error)
-        if (state is AppListUiState.Error) {
-            assertEquals("刷新失败", state.message)
+        // 等待刷新完成
+        advanceUntilIdle()
+
+        val stateAfterRefresh = viewModel.uiState.value
+        assertTrue(stateAfterRefresh is AppListUiState.Success)
+        assertEquals(AppSortType.BY_INSTALL_TIME, viewModel.getCurrentSortType())
+        if (stateAfterRefresh is AppListUiState.Success) {
+            assertEquals(2, stateAfterRefresh.apps.size)
         }
     }
 
     @Test
-    fun `AppListViewModel_searchApps_filters_results_correctly`() = runTest {
+    fun `AppListViewModel_refresh_handles_error_gracefully`() = runTest(testDispatcher) {
+        val mockRepository = mockk<AppListRepository>()
+        coEvery { mockRepository.getAllApps(any()) } throws Exception("网络错误")
+
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns emptyList()
+
+        val viewModel = AppListViewModel(mockRepository, mockContext)
+
+        // 等待初始化完成（会失败）
+        advanceUntilIdle()
+
+        viewModel.refresh()
+
+        // 等待刷新完成（会失败）
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is AppListUiState.Error)
+        if (state is AppListUiState.Error) {
+            assertEquals("网络错误", state.message)
+        }
+    }
+
+    @Test
+    fun `AppListViewModel_searchApps_filters_results_correctly`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.music", 0, "Music Player"),
             createMockApplicationInfo("com.example.video", 0, "Video Player"),
@@ -348,26 +375,28 @@ class AppListTest {
         }
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 执行搜索
         viewModel.searchApps("player")
-        testScheduler.advanceUntilIdle()
 
-        // 验证搜索结果
+        // 等待搜索完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.Success)
         if (state is AppListUiState.Success) {
             assertEquals("player", state.searchQuery)
             assertEquals(2, state.apps.size)
+            assertTrue(state.apps.any { it.packageName == "com.example.music" })
+            assertTrue(state.apps.any { it.packageName == "com.example.video" })
         }
     }
 
     @Test
-    fun `AppListViewModel_searchApps_clears_results_with_empty_query`() = runTest {
+    fun `AppListViewModel_searchApps_clears_results_with_empty_query`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.music", 0, "Music Player")
         )
@@ -378,20 +407,21 @@ class AppListTest {
         }
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 先执行搜索
         viewModel.searchApps("music")
-        testScheduler.advanceUntilIdle()
 
-        // 清空搜索
+        // 等待搜索完成
+        advanceUntilIdle()
+
         viewModel.searchApps("")
-        testScheduler.advanceUntilIdle()
 
-        // 验证返回完整列表
+        // 等待清空搜索完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.Success)
         if (state is AppListUiState.Success) {
@@ -401,7 +431,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_showAppMenu_displays_menu_state`() = runTest {
+    fun `AppListViewModel_showAppMenu_displays_menu_state`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -412,21 +442,17 @@ class AppListTest {
         }
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 获取应用信息
         val initialState = viewModel.uiState.value
         assertTrue(initialState is AppListUiState.Success)
         val app = (initialState as AppListUiState.Success).apps[0]
 
-        // 显示操作菜单
         viewModel.showAppMenu(app)
-        testScheduler.advanceUntilIdle()
 
-        // 验证菜单状态
         val menuState = viewModel.uiState.value
         assertTrue(menuState is AppListUiState.AppMenu)
         if (menuState is AppListUiState.AppMenu) {
@@ -435,7 +461,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_closeAppMenu_returns_to_list_state`() = runTest {
+    fun `AppListViewModel_closeAppMenu_returns_to_list_state`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -446,59 +472,65 @@ class AppListTest {
         }
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 获取应用信息并显示菜单
         val initialState = viewModel.uiState.value
         val app = (initialState as AppListUiState.Success).apps[0]
         viewModel.showAppMenu(app)
-        testScheduler.advanceUntilIdle()
 
-        // 验证菜单状态
         assertTrue(viewModel.uiState.value is AppListUiState.AppMenu)
 
-        // 关闭菜单
         viewModel.closeAppMenu()
-        testScheduler.advanceUntilIdle()
 
-        // 验证返回列表状态
+        // 等待刷新完成
+        advanceUntilIdle()
+
         val finalState = viewModel.uiState.value
         assertTrue(finalState is AppListUiState.Success)
     }
 
     @Test
-    fun `AppListViewModel_openApp_succeeds_for_valid_app`() = runTest {
-        val mockIntent = mockk<android.content.Intent>()
+    fun `AppListViewModel_openApp_succeeds_for_valid_app`() = runTest(testDispatcher) {
+        val mockIntent = mockk<android.content.Intent>(relaxed = true)
         every { mockPackageManager.getLaunchIntentForPackage("com.example.app") } returns mockIntent
         every { mockIntent.addFlags(any()) } returns mockIntent
 
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns emptyList()
+
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 打开应用
+        // 等待初始化完成
+        advanceUntilIdle()
+
         viewModel.openApp("com.example.app")
-        testScheduler.advanceUntilIdle()
 
-        // 验证没有错误状态
-        val state = viewModel.uiState.value
-        assertFalse(state is AppListUiState.Error)
+        // 等待操作完成
+        advanceUntilIdle()
+
+        verify { mockPackageManager.getLaunchIntentForPackage("com.example.app") }
+        verify { mockIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
     }
 
     @Test
-    fun `AppListViewModel_openApp_fails_for_invalid_app`() = runTest {
+    fun `AppListViewModel_openApp_fails_for_invalid_app`() = runTest(testDispatcher) {
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns emptyList()
         every { mockPackageManager.getLaunchIntentForPackage("com.invalid.app") } returns null
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 打开不存在的应用
+        // 等待初始化完成
+        advanceUntilIdle()
+
         viewModel.openApp("com.invalid.app")
-        testScheduler.advanceUntilIdle()
 
-        // 验证错误状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.Error)
         if (state is AppListUiState.Error) {
@@ -507,7 +539,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_showUninstallConfirm_displays_confirm_state`() = runTest {
+    fun `AppListViewModel_showUninstallConfirm_displays_confirm_state`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -519,16 +551,16 @@ class AppListTest {
         every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 显示卸载确认
         viewModel.showUninstallConfirm("com.example.app")
-        testScheduler.advanceUntilIdle()
 
-        // 验证卸载确认状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.UninstallConfirm)
         if (state is AppListUiState.UninstallConfirm) {
@@ -537,7 +569,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_cancelUninstall_returns_to_list_state`() = runTest {
+    fun `AppListViewModel_cancelUninstall_returns_to_list_state`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -549,40 +581,44 @@ class AppListTest {
         every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 显示卸载确认
         viewModel.showUninstallConfirm("com.example.app")
-        testScheduler.advanceUntilIdle()
 
-        // 验证卸载确认状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         assertTrue(viewModel.uiState.value is AppListUiState.UninstallConfirm)
 
-        // 取消卸载
         viewModel.cancelUninstall()
-        testScheduler.advanceUntilIdle()
 
-        // 验证返回列表状态
+        // 等待刷新完成
+        advanceUntilIdle()
+
         val finalState = viewModel.uiState.value
         assertTrue(finalState is AppListUiState.Success)
     }
 
     @Test
-    fun `AppListViewModel_showUninstallConfirm_handles_nonexistent_app`() = runTest {
+    fun `AppListViewModel_showUninstallConfirm_handles_nonexistent_app`() = runTest(testDispatcher) {
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns emptyList()
         every { mockPackageManager.getApplicationInfo("com.nonexistent", PackageManager.GET_META_DATA) }
             .throws(PackageManager.NameNotFoundException())
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 显示不存在应用的卸载确认
+        // 等待初始化完成
+        advanceUntilIdle()
+
         viewModel.showUninstallConfirm("com.nonexistent")
-        testScheduler.advanceUntilIdle()
 
-        // 验证错误状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.Error)
         if (state is AppListUiState.Error) {
@@ -591,7 +627,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_getAppDetail_displays_detail_state`() = runTest {
+    fun `AppListViewModel_getAppDetail_displays_detail_state`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -603,16 +639,16 @@ class AppListTest {
         every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 获取应用详情
         viewModel.getAppDetail("com.example.app")
-        testScheduler.advanceUntilIdle()
 
-        // 验证详情状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.AppDetail)
         if (state is AppListUiState.AppDetail) {
@@ -622,18 +658,22 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_getAppDetail_handles_nonexistent_app`() = runTest {
+    fun `AppListViewModel_getAppDetail_handles_nonexistent_app`() = runTest(testDispatcher) {
+        every { mockPackageManager.getInstalledApplications(PackageManager.GET_META_DATA) } returns emptyList()
         every { mockPackageManager.getApplicationInfo("com.nonexistent", PackageManager.GET_META_DATA) }
             .throws(PackageManager.NameNotFoundException())
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 获取不存在应用的详情
+        // 等待初始化完成
+        advanceUntilIdle()
+
         viewModel.getAppDetail("com.nonexistent")
-        testScheduler.advanceUntilIdle()
 
-        // 验证错误状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         val state = viewModel.uiState.value
         assertTrue(state is AppListUiState.Error)
         if (state is AppListUiState.Error) {
@@ -642,7 +682,7 @@ class AppListTest {
     }
 
     @Test
-    fun `AppListViewModel_closeDetail_returns_to_list_state`() = runTest {
+    fun `AppListViewModel_closeDetail_returns_to_list_state`() = runTest(testDispatcher) {
         val apps = listOf(
             createMockApplicationInfo("com.example.app", 0, "Test App")
         )
@@ -654,48 +694,67 @@ class AppListTest {
         every { mockPackageManager.getApplicationInfo("com.example.app", PackageManager.GET_META_DATA) } returns apps[0]
 
         val repository = AppListRepository(mockContext)
-        val viewModel = AppListViewModel(repository)
+        val viewModel = AppListViewModel(repository, mockContext)
 
-        // 等待初始加载完成
-        testScheduler.advanceUntilIdle()
+        // 等待初始化完成
+        advanceUntilIdle()
 
-        // 获取应用详情
         viewModel.getAppDetail("com.example.app")
-        testScheduler.advanceUntilIdle()
 
-        // 验证详情状态
+        // 等待操作完成
+        advanceUntilIdle()
+
         assertTrue(viewModel.uiState.value is AppListUiState.AppDetail)
 
-        // 关闭详情
         viewModel.closeDetail()
-        testScheduler.advanceUntilIdle()
 
-        // 验证返回列表状态
+        // 等待刷新完成
+        advanceUntilIdle()
+
         val finalState = viewModel.uiState.value
         assertTrue(finalState is AppListUiState.Success)
     }
 
     // 辅助函数
+
     private fun createMockApplicationInfo(
         packageName: String,
         flags: Int,
         label: String
     ): ApplicationInfo {
-        val appInfo = mockk<ApplicationInfo>()
-        every { appInfo.packageName } returns packageName
-        every { appInfo.flags } returns flags
-        every { appInfo.loadLabel(any()) } returns label
-        every { appInfo.loadIcon(any()) } returns mockk<Drawable>()
-        return appInfo
+        val appInfo = ApplicationInfo().apply {
+            this.packageName = packageName
+            this.flags = flags
+        }
+        val mockAppInfo = spyk(appInfo)
+        every { mockAppInfo.loadLabel(any<PackageManager>()) } returns label
+        every { mockAppInfo.loadIcon(any<PackageManager>()) } returns mockk<Drawable>(relaxed = true)
+        return mockAppInfo
     }
 
-    private fun createMockPackageInfo(packageName: String): PackageInfo {
-        val packageInfo = mockk<PackageInfo>()
-        packageInfo.packageName = packageName
-        packageInfo.versionName = "1.0.0"
-        packageInfo.longVersionCode = 1L
-        packageInfo.firstInstallTime = System.currentTimeMillis()
-        packageInfo.lastUpdateTime = System.currentTimeMillis()
-        return packageInfo
+    private fun createMockPackageInfo(
+        packageName: String,
+        installTime: Long = System.currentTimeMillis(),
+        lastUpdateTime: Long = System.currentTimeMillis()
+    ): PackageInfo {
+        return PackageInfo().apply {
+            this.packageName = packageName
+            versionName = "1.0.0"
+            try {
+                val firstInstallTimeField = PackageInfo::class.java.getDeclaredField("firstInstallTime")
+                firstInstallTimeField.isAccessible = true
+                firstInstallTimeField.setLong(this, installTime)
+
+                val lastUpdateTimeField = PackageInfo::class.java.getDeclaredField("lastUpdateTime")
+                lastUpdateTimeField.isAccessible = true
+                lastUpdateTimeField.setLong(this, lastUpdateTime)
+
+                val versionCodeField = PackageInfo::class.java.getDeclaredField("versionCode")
+                versionCodeField.isAccessible = true
+                versionCodeField.setInt(this, 1)
+            } catch (e: Exception) {
+                // 忽略反射异常
+            }
+        }
     }
 }

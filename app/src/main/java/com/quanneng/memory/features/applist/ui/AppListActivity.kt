@@ -16,7 +16,7 @@ class AppListActivity : ComponentActivity() {
 
     private val viewModel: AppListViewModel by viewModels {
         val container = AppContainer(applicationContext)
-        AppListViewModelFactory(container.appListRepository)
+        AppListViewModelFactory(container.appListRepository, applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -7,8 +7,8 @@
 - 然后自动继续下一个任务
 
 如果所有任务都完成，请在回复**最后一行**精确写上：
-EXIT_SIGNAL: true
-DONE
+`EXIT_SIGNAL: true
+`DONE
 
 项目总体目标见 TODO.md 开头。
 现在开始执行！

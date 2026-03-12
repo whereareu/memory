@@ -10,6 +10,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
+ * 应用排序类型
+ */
+enum class AppSortType {
+    BY_NAME,           // 按名称排序
+    BY_INSTALL_TIME,   // 按安装时间排序
+    BY_UPDATE_TIME     // 按更新时间排序
+}
+
+/**
  * 应用列表数据仓库
  * 负责获取、过滤和管理已安装应用信息
  */
@@ -20,23 +29,34 @@ class AppListRepository(
         get() = context.packageManager
 
     /**
-     * 获取所有已安装应用
-     * @param includeSystemApps 是否包含系统应用
-     * @return 应用列表
+     * 获取所有已安装应用（包括系统应用和用户应用）
+     * @param sortType 排序类型
+     * @return 所有应用列表
      */
     @IoDispatcher
-    suspend fun getAllApps(includeSystemApps: Boolean = false): List<AppInfo> = withContext(Dispatchers.IO) {
+    suspend fun getAllApps(sortType: AppSortType = AppSortType.BY_NAME): List<AppInfo> = withContext(Dispatchers.IO) {
         val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
 
-        packages.mapNotNull { packageInfo ->
-            try {
-                packageInfo.toAppInfo(packageManager)
-            } catch (e: Exception) {
-                null
+        packages.asSequence()
+            .mapNotNull { applicationInfo ->
+                try {
+                    applicationInfo.toAppInfo(packageManager)
+                } catch (e: Exception) {
+                    null
+                }
             }
-        }.filter { appInfo ->
-            includeSystemApps || !appInfo.isSystemApp
-        }.sortedBy { it.label.toString().lowercase() }
+            .filter { appInfo ->
+                val label = appInfo.label?.toString()
+                !label.isNullOrBlank() && label != appInfo.packageName
+            }
+            .let { apps ->
+                when (sortType) {
+                    AppSortType.BY_NAME -> apps.sortedBy { it.label.toString().lowercase() }
+                    AppSortType.BY_INSTALL_TIME -> apps.sortedByDescending { it.installTime }
+                    AppSortType.BY_UPDATE_TIME -> apps.sortedByDescending { it.lastUpdateTime }
+                }
+            }
+            .toList()
     }
 
     /**
@@ -109,12 +129,12 @@ class AppListRepository(
     /**
      * 搜索应用
      * @param query 搜索关键词
-     * @param includeSystemApps 是否包含系统应用
+     * @param sortType 排序类型
      * @return 匹配的应用列表
      */
     @IoDispatcher
-    suspend fun searchApps(query: String, includeSystemApps: Boolean = false): List<AppInfo> = withContext(Dispatchers.IO) {
-        val allApps = getAllApps(includeSystemApps)
+    suspend fun searchApps(query: String, sortType: AppSortType = AppSortType.BY_NAME): List<AppInfo> = withContext(Dispatchers.IO) {
+        val allApps = getAllApps(sortType)
         if (query.isBlank()) {
             allApps
         } else {
