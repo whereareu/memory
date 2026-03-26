@@ -152,10 +152,12 @@ app/src/main/java/com/quanneng/memory/
 - ✅ 历史记录
 
 ### 5. 技术文章 (Articles)
-- ✅ Python 爬虫（掘金等平台）
-- ✅ GitHub Actions 定时更新
-- ✅ Android 端展示（来源筛选、搜索）
+- ✅ Python 爬虫（掘金平台，自动过滤 Android/Kotlin 相关）
+- ✅ GitHub Actions 定时更新（每小时）
+- ✅ Android 端展示（来源筛选、实时搜索、下拉刷新）
 - ✅ Ktor HTTP Client 集成
+- ✅ 独立数据仓库 (memory-data)
+- ✅ 自动数据同步
 
 ## 架构规范
 
@@ -254,12 +256,34 @@ sealed class UiState {
 ./gradlew test --tests AppListTest
 ```
 
+## GitHub 仓库信息
+
+### 主仓库 (whereareu/memory)
+- **URL**: https://github.com/whereareu/memory
+- **用途**: Android 应用主项目
+- **分支**: main
+
+### 数据仓库 (whereareu/memory-data)
+- **URL**: https://github.com/whereareu/memory-data
+- **用途**: 存储爬虫生成的文章数据
+- **Raw URL**: https://raw.githubusercontent.com/whereareu/memory-data/main/articles.json
+- **更新频率**: 每小时 (GitHub Actions 自动)
+- **最后更新**: 2026-03-26 09:58:20 UTC
+
+### GitHub Actions
+- **Workflow**: `memory-data/.github/workflows/sync.yml`
+- **触发方式**:
+  - 定时: `cron: '0 * * * *'` (每小时)
+  - 手动: `gh workflow run "Sync Articles from Memory"`
+- **权限**: `contents: write`
+- **状态**: ✅ Active
+
 ## 项目进度
 
 - **当前版本**: 1.0
-- **最后更新**: 2025-03-16
-- **已完成**: 4个主要功能模块
-- **进行中**: 每日Android一问功能优化
+- **最后更新**: 2026-03-26
+- **已完成**: 5个主要功能模块
+- **最新完成**: 技术文章爬虫 + GitHub Actions 自动更新
 
 ## 注意事项
 
@@ -271,17 +295,210 @@ sealed class UiState {
 
 ## 相关文档
 
+### 功能文档
 - `README.widget.md` - 小部件功能详细文档
 - `README.applist.md` - 应用列表功能详细文档
 - `README.articles.feature.md` - 技术文章功能详细文档
-- `ARCHITECTURE.md` - 爬虫架构设计
-- `IMPLEMENTATION_SUMMARY.md` - 技术文章功能实施总结
+- `crawler/README.md` - Python 爬虫项目文档
+
+### 架构与实施
+- `ARCHITECTURE.md` - 技术文章爬虫架构设计
+- `IMPLEMENTATION_SUMMARY.md` - 技术文章功能完整实施总结
+
+### 进度记录
 - `PROGRESS.md` - 项目开发进度记录
-- `DONE.md` - 已完成任务归档1
+- `DONE.md` - 已完成任务归档
+
+### 项目记忆
+- `.claude/PROJECT_MEMORY.md` - 本文档（项目结构快速记忆）
+
+## 重要链接
+
+### GitHub 仓库
+- **主仓库**: https://github.com/whereareu/memory
+- **数据仓库**: https://github.com/whereareu/memory-data
+- **Actions**: https://github.com/whereareu/memory-data/actions
+
+### 数据 API
+- **Raw JSON**: https://raw.githubusercontent.com/whereareu/memory-data/main/articles.json
+- **备用 URL**: https://cdn.jsdelivr.net/gh/whereareu/memory-data@main/articles.json
 
 ## 外部项目
 
-- `crawler/` - Python 爬虫项目（独立项目）
-  - GitHub Actions 定时任务
-  - 数据输出到 `data/articles.json`
-  - 支持多平台爬虫（掘金、CSDN、Medium等）
+### crawler/ - Python 爬虫项目
+- **位置**: `crawler/` (主项目子目录)
+- **Python 版本**: 3.12
+- **虚拟环境**: `crawler/venv/`
+
+#### 目录结构
+```
+crawler/
+├── src/
+│   ├── crawlers/          # 爬虫实现
+│   │   ├── base.py       # 基础爬虫类
+│   │   └── juejin.py     # 掘金爬虫（已实现）
+│   ├── models/           # 数据模型
+│   │   └── article.py    # 文章模型 (Pydantic)
+│   └── main.py           # 主程序
+├── data/
+│   └── articles.json     # 生成的数据文件
+├── tests/
+│   └── test_crawler.py   # 单元测试
+├── .github/workflows/
+│   └── crawler.yml       # 备用 workflow (未使用)
+├── venv/                 # Python 虚拟环境
+├── requirements.txt      # 依赖列表
+├── .gitignore           # Git 忽略规则
+├── debug_api.py         # API 调试工具
+└── README.md            # 爬虫文档
+```
+
+#### 已实现的数据源
+- ✅ **掘金 (Juejin)** - Android/Kotlin 相关文章
+  - API: `https://juejin.cn/recommend_api/v1/article/recommend_all_feed`
+  - 过滤: Android, Kotlin, Compose, Jetpack 等关键词
+  - 字段: 标题、摘要、作者、封面、发布时间、阅读时间
+
+#### 依赖项
+- `requests` - HTTP 请求
+- `beautifulsoup4` - HTML 解析
+- `lxml` - 解析器
+- `pydantic` - 数据验证
+- `python-dateutil` - 日期处理
+
+#### 运行方式
+```bash
+# 本地运行
+cd crawler
+source venv/bin/activate
+python src/main.py
+
+# 或使用 python3
+python3 src/main.py
+```
+
+#### 数据流程图
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    GitHub Actions 循环                        │
+├─────────────────────────────────────────────────────────────┤
+│  1. 每小时触发 (cron: '0 * * * *')                          │
+│     ↓                                                        │
+│  2. 从 memory 仓库拉取爬虫代码                               │
+│     ↓                                                        │
+│  3. 运行 Python 爬虫 (掘金 API)                             │
+│     ↓                                                        │
+│  4. 生成 articles.json                                      │
+│     ↓                                                        │
+│  5. 提交并推送到 memory-data 仓库                           │
+│     ↓                                                        │
+│  6. Android App 通过 Raw URL 读取                           │
+└─────────────────────────────────────────────────────────────┘
+
+GitHub Raw URL:
+https://raw.githubusercontent.com/whereareu/memory-data/main/articles.json
+```
+
+## Android 技术文章功能详情
+
+### 数据模型 (Article.kt)
+```kotlin
+// 文章来源枚举
+enum class ArticleSource { JUEJIN, CSDN, MEDIUM, ANDROID_DEVELOPERS_BLOG }
+
+// 文章数据类
+data class Article(
+    val id: String,
+    val title: String,
+    val summary: String,
+    val author: String,
+    val source: ArticleSource,
+    val url: String,
+    val coverImage: String?,
+    val tags: List<String>,
+    val publishedAt: String,  // ISO 8601
+    val readTimeMinutes: Int
+)
+
+// 数据容器
+data class ArticleData(
+    val version: String,
+    val lastUpdated: String,
+    val sources: List<ArticleSourceInfo>,
+    val articles: List<Article>
+)
+```
+
+### Repository 实现 (ArticleRepository.kt)
+- **HTTP Client**: Ktor (Android Engine)
+- **序列化**: kotlinx.serialization + JSON
+- **方法**:
+  - `fetchArticles()` - 获取完整数据
+  - `getAllArticles()` - 获取文章列表
+  - `getArticlesBySource()` - 按来源筛选
+  - `searchArticles()` - 搜索文章
+- **线程**: 所有方法使用 `@IoDispatcher` 注解
+
+### UI 状态管理 (ArticleViewModel.kt)
+```kotlin
+sealed class ArticleUiState {
+    object Loading
+    data class Success(
+        val articles: List<Article>,
+        val filteredArticles: List<Article>,
+        val sources: List<ArticleSource>,
+        val selectedSource: ArticleSource?,
+        val searchQuery: String
+    )
+    data class Error(val message: String)
+}
+```
+
+### UI 功能 (ArticleListScreen.kt)
+- **来源筛选**: ScrollableTabRow (全部/掘金/CSDN...)
+- **搜索功能**: 实时搜索（标题、摘要、标签）
+- **下拉刷新**: SwipeRefresh
+- **文章卡片**: 封面图、标题、摘要、作者、时间、阅读时间
+- **错误处理**: 重试按钮
+
+## 常用命令补充
+
+### GitHub Actions 相关
+```bash
+# 查看运行状态
+cd /tmp/memory-data
+gh run list
+
+# 手动触发更新
+gh workflow run "Sync Articles from Memory"
+
+# 查看最近的 workflow
+gh run view
+
+# 查看 workflow 日志
+gh run view --log
+```
+
+### Python 爬虫调试
+```bash
+# 调试掘金 API
+cd crawler
+source venv/bin/activate
+python debug_api.py
+
+# 查看生成的数据
+cat data/articles.json | python3 -m json.tool
+
+# 运行测试
+pytest tests/
+```
+
+### 数据验证
+```bash
+# 验证 GitHub Raw 数据
+curl "https://raw.githubusercontent.com/whereareu/memory-data/main/articles.json" | python3 -m json.tool
+
+# 检查最后更新时间
+curl -s "https://raw.githubusercontent.com/whereareu/memory-data/main/articles.json" | \
+  python3 -c "import sys, json; print(json.load(sys.stdin)['last_updated'])"
+```
