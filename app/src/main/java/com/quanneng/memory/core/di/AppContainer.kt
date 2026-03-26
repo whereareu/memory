@@ -71,7 +71,7 @@ class AppContainer(context: Context) {
     )
 
     val articleRepository: ArticleRepository = ArticleRepository(
-        ioDispatcher = dispatcherProvider.io,
+        dispatcherProvider = dispatcherProvider,
         context = context
     )
 }

@@ -1,7 +1,7 @@
 package com.quanneng.memory.features.articles.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonNames
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -11,16 +11,16 @@ import java.time.format.DateTimeFormatter
  */
 @Serializable
 enum class ArticleSource {
-    @JsonNames("掘金")
+    @SerialName("掘金")
     JUEJIN,
 
-    @JsonNames("CSDN")
+    @SerialName("CSDN")
     CSDN,
 
-    @JsonNames("Medium")
+    @SerialName("Medium")
     MEDIUM,
 
-    @JsonNames("Android Developers Blog")
+    @SerialName("Android Developers Blog")
     ANDROID_DEVELOPERS_BLOG;
 
     val displayName: String
@@ -43,9 +43,12 @@ data class Article(
     val author: String,
     val source: ArticleSource,
     val url: String,
+    @SerialName("cover_image")
     val coverImage: String? = null,
     val tags: List<String> = emptyList(),
-    val publishedAt: String,  // ISO 8601 格式
+    @SerialName("published_at")
+    val publishedAt: String,
+    @SerialName("read_time_minutes")
     val readTimeMinutes: Int = 5
 ) {
     /**
@@ -83,7 +86,7 @@ data class Article(
  */
 @Serializable
 data class ArticleSourceInfo(
-    val name: ArticleSource,
+    val name: String,
     val icon: String,
     val url: String
 )
@@ -94,6 +97,7 @@ data class ArticleSourceInfo(
 @Serializable
 data class ArticleData(
     val version: String,
+    @SerialName("last_updated")
     val lastUpdated: String,
     val sources: List<ArticleSourceInfo> = emptyList(),
     val articles: List<Article> = emptyList()
