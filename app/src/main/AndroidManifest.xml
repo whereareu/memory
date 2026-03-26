@@ -167,6 +167,13 @@
             android:theme="@style/Theme.Memory"
             android:label="每日Android一问" />
 
+        <!-- 技术文章列表 -->
+        <activity
+            android:name=".features.articles.ui.ArticleListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Memory"
+            android:label="技术文章" />
+
     </application>
 
 </manifest>

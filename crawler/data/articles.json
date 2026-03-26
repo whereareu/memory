@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-03-26T17:19:40.488549",
+  "sources": [
+    {
+      "name": "掘金",
+      "icon": "https://juejin.cn/favicon.ico",
+      "url": "https://juejin.cn"
+    }
+  ],
+  "articles": [
+    {
+      "id": "367b6e42f484",
+      "title": "Kotlin 协程原理详解 —— 以 delay 为例",
+      "summary": "Kotlin 协程原理详解 —— 以 delay 为例 目录 核心结论 suspend 函数编译产物：状态机 挂起全流程 恢复全流程 关键源码逐层拆解 完整时序图 一图总结 核心结论 suspend",
+      "author": "掘金作者",
+      "source": "掘金",
+      "url": "https://juejin.cn/post/7621156838890569762",
+      "cover_image": "https://p3-xtjj-sign.byteimg.com/tos-cn-i-73owjymdk6/b832fbb65b684760afd1492ef16afe5d~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg5Lm-5Z2k5LiA5rCU5p2A:q75.awebp?rk3s=f64ab15b&x-expires=1775121581&x-signature=otoapFZFEeQ1KhNGHSrzYSWDZSM%3D",
+      "tags": [],
+      "published_at": "2026-03-26T16:21:08",
+      "read_time_minutes": 5
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+name: Update Articles
+
+on:
+  # 每小时运行一次
+  schedule:
+    - cron: '0 * * * *'
+
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  update-articles:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout crawler code
+        uses: actions/checkout@v4
+        with:
+          path: memory
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          cd memory/crawler
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml python-dateutil pydantic
+
+      - name: Run crawler
+        run: |
+          cd memory/crawler/src
+          python main.py
+
+      - name: Checkout data repo
+        uses: actions/checkout@v4
+        with:
+          repository: whereareu/memory-data
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: memory-data
+
+      - name: Copy articles.json
+        run: |
+          cp memory/crawler/data/articles.json memory-data/articles.json
+
+      - name: Commit and push to data repo
+        run: |
+          cd memory-data
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add articles.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 更新文章数据 $(date '+%Y-%m-%d %H:%M:%S')"
+          git push

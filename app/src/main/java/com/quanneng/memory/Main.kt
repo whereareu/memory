@@ -9,6 +9,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.DateRange
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
@@ -47,6 +49,7 @@ class Main : ComponentActivity() {
                     onFlashThoughtList = { openFlashThoughtList() },
                     onOpenAppList = { openAppList() },
                     onOpenDailyQuestion = { openDailyQuestion() },
+                    onOpenArticleList = { openArticleList() },
                     onCreateShortcut = { createShortcut() }
                 )
             }
@@ -68,6 +71,10 @@ class Main : ComponentActivity() {
     }
 
     private fun openDailyQuestion() {}
+
+    private fun openArticleList() {
+        startActivity(Intent(this, com.quanneng.memory.features.articles.ui.ArticleListActivity::class.java))
+    }
 
     private fun createShortcut() {
         val intent = Intent(this, Main::class.java).apply {
@@ -102,6 +109,7 @@ fun MainScreen(
     onFlashThoughtList: () -> Unit,
     onOpenAppList: () -> Unit,
     onOpenDailyQuestion: () -> Unit,
+    onOpenArticleList: () -> Unit,
     onCreateShortcut: () -> Unit
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
@@ -186,6 +194,12 @@ fun MainScreen(
                         label = "每日一问",
                         color = Color(0xFF9575CD),
                         onClick = onOpenDailyQuestion
+                    )
+                    QuickAccessItem(
+                        icon = Icons.Default.Article,
+                        label = "文章",
+                        color = Color(0xFF4DB6AC),
+                        onClick = onOpenArticleList
                     )
                 }
 
@@ -359,6 +373,7 @@ fun MainScreenPreview() {
             onFlashThoughtList = {},
             onOpenAppList = {},
             onOpenDailyQuestion = {},
+            onOpenArticleList = {},
             onCreateShortcut = {}
         )
     }
