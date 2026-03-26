@@ -3,7 +3,7 @@
 严格按照 CLAUDE.md 中的规则执行：
 - 读取当前 TODO.md
 - 执行最高优先级未完成任务
-- 完成后立即更新 TODO.md + git commit + 更新 PROGRESS.md
+- 完成后立即更新 TODO.md + 更新 PROGRESS.md
 - 然后自动继续下一个任务
 
 **重要**：完成每个任务后，请询问我是否继续下一个任务。

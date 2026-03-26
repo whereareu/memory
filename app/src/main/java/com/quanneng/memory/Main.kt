@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -45,6 +46,7 @@ class Main : ComponentActivity() {
                     onEditWidget4 = { editWidget(4) },
                     onFlashThoughtList = { openFlashThoughtList() },
                     onOpenAppList = { openAppList() },
+                    onOpenDailyQuestion = { openDailyQuestion() },
                     onCreateShortcut = { createShortcut() }
                 )
             }
@@ -64,6 +66,8 @@ class Main : ComponentActivity() {
     private fun openAppList() {
         startActivity(Intent(this, com.quanneng.memory.features.applist.ui.AppListActivity::class.java))
     }
+
+    private fun openDailyQuestion() {}
 
     private fun createShortcut() {
         val intent = Intent(this, Main::class.java).apply {
@@ -97,6 +101,7 @@ fun MainScreen(
     onEditWidget4: () -> Unit,
     onFlashThoughtList: () -> Unit,
     onOpenAppList: () -> Unit,
+    onOpenDailyQuestion: () -> Unit,
     onCreateShortcut: () -> Unit
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
@@ -175,6 +180,12 @@ fun MainScreen(
                         label = "应用",
                         color = MaterialTheme.colorScheme.tertiaryContainer,
                         onClick = onOpenAppList
+                    )
+                    QuickAccessItem(
+                        icon = Icons.Default.MenuBook,
+                        label = "每日一问",
+                        color = Color(0xFF9575CD),
+                        onClick = onOpenDailyQuestion
                     )
                 }
 
@@ -347,6 +358,7 @@ fun MainScreenPreview() {
             onEditWidget4 = {},
             onFlashThoughtList = {},
             onOpenAppList = {},
+            onOpenDailyQuestion = {},
             onCreateShortcut = {}
         )
     }

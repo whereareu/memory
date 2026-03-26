@@ -28,6 +28,8 @@ private val Context.widgetDataStore: DataStore<Preferences> by preferencesDataSt
  */
 class AppContainer(context: Context) {
 
+    private val appContext: Context = context.applicationContext
+
     private val dataStore: DataStore<Preferences> = context.widgetDataStore
 
     private val dispatcherProvider = DispatcherProvider()
