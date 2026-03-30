@@ -1,6 +1,7 @@
 package com.quanneng.memory.features.articles.data
 
 import android.content.Context
+import android.util.Log
 import com.quanneng.memory.core.dispatchers.DispatcherProvider
 import com.quanneng.memory.core.dispatchers.IoDispatcher
 import com.quanneng.memory.features.articles.model.Article
@@ -9,7 +10,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.statement.bodyAsText
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -36,6 +42,14 @@ class ArticleRepository(
         install(ContentNegotiation) {
             json(json)
         }
+        install(Logging) {
+            level = LogLevel.INFO
+            logger = object : Logger {
+                override fun log(message: String) {
+                    Log.d("KtorClient", message)
+                }
+            }
+        }
     }
 
     /**
@@ -44,9 +58,34 @@ class ArticleRepository(
     @IoDispatcher
     suspend fun fetchArticles(): Result<ArticleData> = withContext(dispatcherProvider.io) {
         try {
-            val response: ArticleData = client.get(GITHUB_RAW_URL).body()
-            Result.success(response)
+            Log.d("ArticleRepository", "开始请求 $GITHUB_RAW_URL")
+            Log.d("ArticleRepository", "当前线程: ${Thread.currentThread().name}")
+
+            val startTime = System.currentTimeMillis()
+            Log.d("ArticleRepository", "发起HTTP请求...")
+
+            val response = client.get(GITHUB_RAW_URL) {
+                headers {
+                    append("Accept", "application/json, text/plain, */*")
+                }
+            }
+            Log.d("ArticleRepository", "收到响应，状态: ${response.status.value}, Content-Type: ${response.headers["Content-Type"]}, 耗时: ${System.currentTimeMillis() - startTime}ms")
+
+            // 手动获取响应文本并解析JSON（GitHub Raw返回text/plain）
+            val responseText = response.bodyAsText()
+            Log.d("ArticleRepository", "响应体长度: ${responseText.length} 字符")
+
+            val body = json.decodeFromString<ArticleData>(responseText)
+            Log.d("ArticleRepository", "成功解析JSON，文章数: ${body.articles.size}")
+            Log.d("ArticleRepository", "总耗时: ${System.currentTimeMillis() - startTime}ms")
+
+            Result.success(body)
         } catch (e: Exception) {
+            Log.e("ArticleRepository", "获取数据失败 - 类型: ${e.javaClass.simpleName}", e)
+            Log.e("ArticleRepository", "错误消息: ${e.message}")
+            e.stackTrace.take(10).forEach {
+                Log.e("ArticleRepository", "    at $it")
+            }
             Result.failure(e)
         }
     }

@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-03-26T10:00:00Z",
+  "sources": [
+    {
+      "name": "掘金",
+      "icon": "https://juejin.cn/favicon.ico",
+      "url": "https://juejin.cn"
+    }
+  ],
+  "articles": [
+    {
+      "id": "test001",
+      "title": "测试文章标题",
+      "summary": "这是一篇测试文章的摘要，用于验证数据是否正确显示。",
+      "author": "测试作者",
+      "source": "掘金",
+      "url": "https://juejin.cn",
+      "cover_image": null,
+      "tags": ["Kotlin", "Android"],
+      "published_at": "2026-03-26T10:00:00",
+      "read_time_minutes": 5
+    }
+  ]
+}

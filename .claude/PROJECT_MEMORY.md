@@ -293,6 +293,13 @@ sealed class UiState {
 4. **测试覆盖率 ≥ 80%**
 5. **所有数据层接口必须使用 @IoDispatcher 注解**
 
+## 调试经验
+
+1. **logcat过滤**: 用PID而非包名，避免匹配系统组件；调试时先看全貌再过滤
+2. **ProGuard**: debug构建需注释`-assumenosideeffects`规则，否则日志被移除
+3. **Ktor**: GitHub Raw返回`text/plain`，需手动`bodyAsText()`+`decodeFromString()`解析
+4. **异常位置**: 框架内部异常可能被吞掉，需在每个关键步骤加日志
+
 ## 相关文档
 
 ### 功能文档

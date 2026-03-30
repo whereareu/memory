@@ -65,7 +65,7 @@ features/articles/
 
 ### GitHub Raw URL
 ```
-https://raw.githubusercontent.com/[username]/memory-data/main/articles.json
+https://raw.githubusercontent.com/whereareu/memory-data/main/articles.json
 ```
 
 ### JSON 结构
@@ -97,6 +97,62 @@ https://raw.githubusercontent.com/[username]/memory-data/main/articles.json
 }
 ```
 
+## 关键调试记忆
+
+### 问题1: ProGuard移除日志导致无法诊断
+**症状**: `Log.d()` 调用无任何输出，无法追踪问题
+
+**原因**: `proguard-rules.pro` 中配置了 `-assumenosideeffects class android.util.Log`
+```
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    ...
+}
+```
+这告诉ProGuard这些日志方法没有副作用，可以被安全移除。
+
+**解决**: 注释掉该规则，debug构建保留日志
+```
+# -assumenosideeffects class android.util.Log { ... }
+```
+
+**位置**: `app/proguard-rules.pro:23-30`
+
+---
+
+### 问题2: GitHub Raw Content-Type不匹配
+**症状**:
+```
+Expected response body of the type 'class ArticleData' but was 'class ByteBufferChannel'
+Response header `ContentType: text/plain; charset=utf-8`
+Request header `Accept: application/json`
+Response status `200 OK`
+```
+
+**原因**: `raw.githubusercontent.com` 返回 `Content-Type: text/plain; charset=utf-8`
+而非 `application/json`。Ktor的ContentNegotiation插件只处理预配置的内容类型。
+
+**解决**: 手动解析响应体，绕过ContentNegotiation的自动类型检测
+```kotlin
+// 修复前：使用自动body()解析
+val body: ArticleData = response.body()  // 失败：NoTransformationFoundException
+
+// 修复后：手动获取文本并解析
+val responseText = response.bodyAsText()
+val body = json.decodeFromString<ArticleData>(responseText)  // 成功
+```
+
+**位置**: `app/src/main/java/com/quanneng/memory/features/articles/data/ArticleRepository.kt:68-70`
+
+---
+
+### 调试经验总结
+1. **日志第一原则**: 遇到问题先确认日志是否被混淆工具移除
+2. **Content-Type陷阱**: 第三方API的Content-Type可能与文档不符，需实测
+3. **手动降级策略**: 自动序列化失败时，手动解析是可靠的fallback
+4. **日志输出位置**: 使用PID过滤日志而非包名，避免匹配到系统组件
+
 ## 使用示例
 
 ### 启动文章列表
@@ -110,6 +166,22 @@ context.startActivity(intent)
 1. 继承 `BaseCrawler`
 2. 实现 `get_articles()` 方法
 3. 在 `main.py` 中注册
+
+## 调试命令
+
+```bash
+# 编译安装
+./gradlew assembleDebug
+adb -s <DEVICE_ID> install -r app/build/outputs/apk/debug/app-debug.apk
+
+# 启动Activity
+adb -s <DEVICE_ID> shell am start -n com.quanneng.memory/.features.articles.ui.ArticleListActivity
+
+# 查看日志（使用PID过滤更精确）
+adb -s <DEVICE_ID> logcat -c
+adb -s <DEVICE_ID> shell "ps | grep quanneng.memory" | awk '{print $2}'
+adb -s <DEVICE_ID> logcat | grep "<PID>"
+```
 
 ## 注意事项
 
@@ -125,3 +197,4 @@ context.startActivity(intent)
 3. **收藏功能**：支持收藏和稍后阅读
 4. **阅读历史**：记录阅读历史
 5. **推送通知**：新文章推送提醒
+6. **更多数据源**：CSDN、Medium、知乎专栏等

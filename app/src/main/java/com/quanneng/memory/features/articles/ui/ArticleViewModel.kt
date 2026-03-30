@@ -1,6 +1,7 @@
 package com.quanneng.memory.features.articles.ui
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quanneng.memory.features.articles.data.ArticleRepository
@@ -48,9 +49,15 @@ class ArticleViewModel(
         viewModelScope.launch {
             _uiState.value = ArticleUiState.Loading
 
+            android.util.Log.d("ArticleViewModel", "开始加载文章...")
+
             repository.fetchArticles()
                 .onSuccess { data ->
+                    android.util.Log.d("ArticleViewModel", "成功获取数据，文章数: ${data.articles.size}")
+
                     val sources = data.articles.map { it.source }.distinct()
+                    android.util.Log.d("ArticleViewModel", "数据源: $sources")
+
                     _uiState.value = ArticleUiState.Success(
                         articles = data.articles,
                         filteredArticles = data.articles,
@@ -58,6 +65,10 @@ class ArticleViewModel(
                     )
                 }
                 .onFailure { e ->
+                    android.util.Log.e("ArticleViewModel", "加载失败", e)
+                    android.util.Log.e("ArticleViewModel", "错误类型: ${e.javaClass.name}")
+                    android.util.Log.e("ArticleViewModel", "错误信息: ${e.message}")
+                    e.printStackTrace()
                     _uiState.value = ArticleUiState.Error(
                         message = e.message ?: "加载失败，请检查网络连接"
                     )

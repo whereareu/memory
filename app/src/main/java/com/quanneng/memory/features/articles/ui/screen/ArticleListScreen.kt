@@ -1,5 +1,8 @@
 package com.quanneng.memory.features.articles.ui.screen
 
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -32,6 +36,7 @@ fun ArticleListScreen(
     viewModel: ArticleViewModel,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var isSearching by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -95,8 +100,10 @@ fun ArticleListScreen(
             when (val state = uiState) {
                 is ArticleUiState.Loading -> {
                     LoadingView()
+                    Log.d("ArticleListScreen", "状态: 加载中")
                 }
                 is ArticleUiState.Success -> {
+                    Log.d("ArticleListScreen", "状态: 成功，文章数: ${state.articles.size}, 过滤后: ${state.filteredArticles.size}")
                     ArticleContent(
                         articles = state.filteredArticles,
                         sources = state.sources,
@@ -106,10 +113,14 @@ fun ArticleListScreen(
                         },
                         onArticleClick = { article ->
                             // 打开文章详情
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.url))
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
                         }
                     )
                 }
                 is ArticleUiState.Error -> {
+                    Log.e("ArticleListScreen", "状态: 错误 - ${state.message}")
                     ErrorView(
                         message = state.message,
                         onRetry = { viewModel.refresh() }
@@ -131,6 +142,8 @@ fun ArticleContent(
     onSourceSelected: (ArticleSource?) -> Unit,
     onArticleClick: (Article) -> Unit
 ) {
+    Log.d("ArticleContent", "渲染文章内容，数量: ${articles.size}, 来源: $sources")
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -142,15 +155,41 @@ fun ArticleContent(
         )
 
         // 文章列表
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(articles) { article ->
-                ArticleCard(
-                    article = article,
-                    onClick = { onArticleClick(article) }
-                )
+        if (articles.isEmpty()) {
+            // 空状态
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "暂无文章",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "下拉刷新或稍后再试",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(articles) { article ->
+                    Log.d("ArticleContent", "渲染文章: ${article.title}")
+                    ArticleCard(
+                        article = article,
+                        onClick = { onArticleClick(article) }
+                    )
+                }
             }
         }
     }

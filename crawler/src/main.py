@@ -12,6 +12,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 
 from crawlers.juejin import JuejinCrawler
+from crawlers.csdn import CsdnCrawler
 from models.article import ArticleData
 
 
@@ -25,8 +26,8 @@ def main():
     # 爬取各个数据源
     crawlers = [
         JuejinCrawler(),
+        CsdnCrawler(),
         # 后续添加更多爬虫
-        # CsdnCrawler(),
         # MediumCrawler(),
     ]
 
